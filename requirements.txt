@@ -1,0 +1,4 @@
+# GoPay 分享版运行依赖（Python 3.11）
+tls_client>=0.13,<2
+playwright>=1.40,<2
+pproxy>=2.7,<3

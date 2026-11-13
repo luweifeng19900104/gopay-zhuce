@@ -1,0 +1,36 @@
+# Python
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.venv/
+
+# Runtime secrets and mutable state
+config/*.env
+!config/*.env.example
+config/*accounts*.json
+!config/gopay_accounts.example.json
+config/*phone_pool*.json
+config/*tasks*.json
+config/*state*.json
+config/cdk_keys.json
+config/proxy_providers.json
+config/device_profile*.json
+config/*environment*.jsonl
+config/payment_browser_profiles/
+*.db
+*.db-shm
+*.db-wal
+
+# Editor and OS metadata
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
+
+# Generated transaction artifacts
+work/
+MODIFIED_*
+ORIGINAL_*
+DIFF_FILE.diff
+VERIFICATION.txt

@@ -1,0 +1,1320 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="color-scheme" content="light">
+  <title>GoPay 运营控制台</title>
+  <style>
+    :root{
+      --navy:#041a33;--navy-2:#082846;--blue:#0878f9;--blue-2:#075fd0;
+      --cyan:#11b9e6;--ink:#102033;--muted:#617086;--line:#dce4ee;
+      --soft:#f5f8fc;--selected:#eaf4ff;--white:#fff;--green:#1fae5b;
+      --green-soft:#eaf8f0;--amber:#c47b00;--amber-soft:#fff7e6;
+      --red:#d93a43;--red-soft:#fff0f1;--shadow:0 12px 32px rgba(20,47,77,.09);
+      --r:10px;--sidebar:224px;
+    }
+    *{box-sizing:border-box}
+    [hidden]{display:none!important}
+    html,body{margin:0;min-height:100%;background:var(--white);color:var(--ink)}
+    body{font-family:"Segoe UI","Microsoft YaHei","PingFang SC",Arial,sans-serif;font-size:14px;line-height:1.5}
+    button,input,select,textarea{font:inherit;color:inherit}
+    button{cursor:pointer}
+    button:disabled{cursor:not-allowed;opacity:.58}
+    :focus-visible{outline:3px solid rgba(8,120,249,.22);outline-offset:2px}
+    .app{min-height:100vh}
+    .sidebar{position:fixed;inset:0 auto 0 0;width:var(--sidebar);background:var(--navy);color:#dce9f7;padding:24px 14px;z-index:50;display:flex;flex-direction:column}
+    .brand{display:flex;align-items:center;gap:12px;padding:0 10px 26px}
+    .brand-mark{width:38px;height:38px;border:1px solid rgba(255,255,255,.22);border-radius:10px;display:grid;place-items:center;color:#31c2ef;font-weight:800;letter-spacing:-1px}
+    .brand strong{display:block;color:#fff;font-size:17px}
+    .brand span{display:block;color:#91a7bd;font-size:12px;margin-top:1px}
+    .nav{display:grid;gap:5px}
+    .nav-btn{border:0;background:transparent;color:#c5d4e3;border-radius:8px;min-height:44px;padding:0 12px;display:flex;align-items:center;gap:12px;text-align:left;transition:.18s ease}
+    .nav-btn:hover{background:rgba(255,255,255,.07);color:#fff}
+    .nav-btn.active{background:#0b4f9d;color:#fff;box-shadow:inset 3px 0 0 #2ec5ef}
+    .nav-btn svg{width:19px;height:19px;flex:none}
+    .side-foot{margin-top:auto;padding:16px 10px 2px;border-top:1px solid rgba(255,255,255,.1);font-size:12px;color:#88a1b9}
+    .local-dot{display:inline-block;width:8px;height:8px;background:#25c66a;border-radius:50%;margin-right:7px;box-shadow:0 0 0 4px rgba(37,198,106,.12)}
+    .shell{margin-left:var(--sidebar);min-width:0}
+    .topbar{height:66px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 24px;position:sticky;top:0;background:rgba(255,255,255,.96);backdrop-filter:blur(8px);z-index:35}
+    .top-left{display:flex;align-items:center;gap:12px}
+    .menu-btn{display:none}
+    .topbar h1{font-size:20px;margin:0;font-weight:700;letter-spacing:-.02em}
+    .top-actions{display:flex;align-items:center;gap:14px}
+    .local-status{font-size:13px;color:#405067;white-space:nowrap}
+    .main{padding:20px 24px 40px;max-width:1600px;margin:auto}
+    .stats{display:grid;grid-template-columns:repeat(4,minmax(160px,1fr));border:1px solid var(--line);border-radius:var(--r);overflow:hidden;margin-bottom:18px;background:#fff}
+    .stat{min-height:90px;padding:16px 18px;display:flex;align-items:center;gap:14px;border-right:1px solid var(--line)}
+    .stat:last-child{border-right:0}
+    .stat-icon{width:38px;height:38px;border:1px solid #cfe4fa;border-radius:10px;color:var(--blue);display:grid;place-items:center;background:#f8fbff}
+    .stat-icon svg{width:20px;height:20px}
+    .stat span{display:block;color:var(--muted);font-size:12px}
+    .stat b{font-size:25px;line-height:1.1;font-variant-numeric:tabular-nums}
+    .view{display:none;min-width:0}
+    .view.active{display:block}
+    .section-head{display:flex;justify-content:space-between;align-items:flex-start;gap:18px;margin:0 0 16px}
+    .section-head h2{font-size:22px;line-height:1.25;margin:0 0 4px}
+    .section-head p{margin:0;color:var(--muted)}
+    .panel{border:1px solid var(--line);border-radius:var(--r);background:#fff;min-width:0}
+    .panel-head{min-height:54px;padding:13px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:12px}
+    .panel-head h3{margin:0;font-size:16px}
+    .panel-body{padding:16px}
+    .split{display:grid;grid-template-columns:minmax(330px,.88fr) minmax(440px,1.35fr);gap:14px}
+    .overview-grid{display:grid;grid-template-columns:1.25fr .75fr;gap:14px}
+    .form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:13px}
+    .register-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+    .form-grid .wide{grid-column:1/-1}
+    .field{display:grid;gap:6px}
+    .field label{font-size:12px;font-weight:650;color:#35465b}
+    input,select,textarea{width:100%;border:1px solid #cfd9e5;border-radius:7px;background:#fff;min-height:40px;padding:8px 11px;transition:border .15s,box-shadow .15s}
+    input:focus,select:focus,textarea:focus{border-color:var(--blue);outline:0;box-shadow:0 0 0 3px rgba(8,120,249,.11)}
+    textarea{resize:vertical;min-height:104px}
+    textarea.proxy-list{min-height:96px;font-family:"Cascadia Mono","SFMono-Regular",Consolas,monospace;font-size:12px;line-height:1.55}
+    .proxy-tools{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap}
+    .proxy-tools .proxy-actions{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .phone-picker{border:1px solid #d8e1eb;border-radius:7px;max-height:190px;overflow:auto;background:#f9fbfd}
+    .phone-choice{min-height:40px;padding:7px 10px;border-bottom:1px solid #e7edf3;display:grid;grid-template-columns:22px minmax(150px,1fr) auto;align-items:center;gap:8px}
+    .phone-choice:last-child{border-bottom:0}
+    .phone-choice input,.pool-check{width:16px;height:16px;min-height:0;padding:0}
+    .phone-choice.is-selected{background:#edf6ff}
+    .pool-summary{display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+    .copy-cell{display:flex;align-items:center;gap:6px;min-width:0}
+    .copy-cell .truncate{flex:1;min-width:0}
+    .copy-icon{width:30px;height:30px;min-height:30px;padding:0;border:1px solid #cbd7e4;border-radius:6px;background:#fff;color:#3f5f82;display:inline-grid;place-items:center;flex:none}
+    .copy-icon:hover{border-color:#7ea9d6;background:#eff7ff;color:var(--blue)}
+    .copy-icon svg{width:15px;height:15px}
+    .hint{color:var(--muted);font-size:12px}
+    .btn{border:1px solid transparent;border-radius:7px;min-height:38px;padding:0 14px;font-weight:650;display:inline-flex;align-items:center;justify-content:center;gap:7px;transition:.16s ease;white-space:nowrap}
+    .btn:hover:not(:disabled){transform:translateY(-1px)}
+    .btn.primary{background:var(--blue);color:#fff;box-shadow:0 4px 12px rgba(8,120,249,.18)}
+    .btn.primary:hover:not(:disabled){background:var(--blue-2)}
+    .btn.secondary{background:#fff;border-color:#cbd7e4;color:#23364d}
+    .btn.secondary:hover:not(:disabled){border-color:#96b1cf;background:#f8fbff}
+    .btn.ghost{background:transparent;color:var(--blue);padding:0 8px}
+    .btn.danger{background:#fff;border-color:#efb3b7;color:var(--red)}
+    .btn.danger-solid{background:var(--red);color:#fff}
+    .btn.sm{min-height:31px;padding:0 9px;font-size:12px}
+    .btn svg{width:16px;height:16px}
+    .toolbar{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+    .toolbar-left,.toolbar-right,.action-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .search{max-width:330px;position:relative}
+    .search input{padding-left:36px}
+    .search svg{position:absolute;width:16px;height:16px;left:12px;top:12px;color:#7c8ca0}
+    .warning{border-left:3px solid var(--red);background:var(--red-soft);color:#9c2931;padding:10px 12px;border-radius:5px;font-size:12px}
+    .notice{border-left:3px solid var(--blue);background:#eff7ff;color:#27527c;padding:10px 12px;border-radius:5px;font-size:12px}
+    .table-wrap{overflow:auto;max-width:100%;min-width:0}
+    table{border-collapse:collapse;width:100%;min-width:760px}
+    th,td{height:45px;padding:8px 12px;border-bottom:1px solid #e5ebf2;text-align:left;vertical-align:middle}
+    th{height:39px;font-size:11px;text-transform:none;letter-spacing:.01em;color:#66768a;background:#f8fafc;font-weight:700;white-space:nowrap}
+    td{font-size:13px}
+    tbody tr{transition:background .14s}
+    tbody tr:hover{background:#f8fbff}
+    tbody tr.selected{background:var(--selected)}
+    .mono{font-family:"Cascadia Mono","SFMono-Regular",Consolas,monospace;font-size:12px;font-variant-numeric:tabular-nums}
+    .muted{color:var(--muted)}
+    .truncate{display:block;max-width:360px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .status{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 8px;font-size:11px;font-weight:700;white-space:nowrap}
+    .status::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+    .status.running{color:#0868d7;background:#e9f3ff}
+    .status.rotating,.status.completing,.status.refreshing_token,.status.relogin,.status.submitting_phone,.status.verifying_otp{color:#0868d7;background:#e9f3ff}
+    .status.waiting_otp{color:var(--amber);background:var(--amber-soft)}
+    .status.success,.status.done,.status.available,.status.number_acquired,.status.code_received,.status.completed{color:#16834a;background:var(--green-soft)}
+    .status.failed,.status.error{color:var(--red);background:var(--red-soft)}
+    .status.used_failed{color:var(--red);background:var(--red-soft)}
+    .status.used_success{color:#16834a;background:var(--green-soft)}
+    .status.reserved{color:#0868d7;background:#e9f3ff}
+    .status.no_balance{color:var(--amber);background:var(--amber-soft)}
+    .status.missing{color:var(--red);background:var(--red-soft)}
+    .status.unknown{color:#65758a;background:#eef2f6}
+    .status.already_registered{color:#6e5aa7;background:#f2effa}
+    .status.registered{color:#225fa8;background:#edf5ff}
+    .account-status{display:grid;gap:4px;justify-items:start}
+    .cooldown-label{color:var(--muted);font-size:11px;white-space:nowrap;font-variant-numeric:tabular-nums}
+    .acc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px;padding:14px}
+    .acc-card{border:1px solid var(--line);border-radius:12px;background:var(--bg);padding:12px;display:flex;flex-direction:column;gap:10px;box-shadow:0 1px 3px rgba(16,42,67,.06)}
+    .acc-card.status-failed{border-color:var(--red)}
+    .acc-card.status-no_balance{opacity:.75}
+    .acc-card.status-running{opacity:.85;border-color:#b9cbdf;background:#f7fafd}
+    .acc-head{display:flex;justify-content:space-between;align-items:flex-start;gap:8px}
+    .acc-phone{font-family:ui-monospace,Consolas,monospace;font-weight:700;font-size:15px}
+    .acc-pin{font-size:12px;color:#47586d;margin-top:2px}
+    .acc-meta{display:flex;justify-content:space-between;font-size:12px;color:#47586d;gap:8px}
+    .acc-meta b{color:#1a2433}
+    .acc-err{font-size:11px;color:var(--red);background:var(--red-soft);border-radius:8px;padding:6px 8px;word-break:break-all;max-height:48px;overflow:auto}
+    .acc-pay{display:flex;gap:8px}
+    .acc-pay .acc-link{flex:1;min-width:0}
+    .acc-foot{display:flex;gap:6px;flex-wrap:wrap}
+    .empty{padding:42px 20px;text-align:center;color:var(--muted)}
+    .empty strong{display:block;color:#35465b;font-size:15px;margin-bottom:5px}
+    .flow{padding:18px 8px 8px}
+    .rail{display:grid;grid-template-columns:repeat(5,1fr);position:relative;margin:10px 0 18px}
+    .rail::before{content:"";position:absolute;height:2px;background:#cfd8e3;left:10%;right:10%;top:17px}
+    .rail-fill{position:absolute;height:2px;background:var(--blue);left:10%;top:17px;width:0;transition:width .35s}
+    .rail-step{position:relative;z-index:1;text-align:center;color:#748398;font-size:11px}
+    .rail-dot{width:35px;height:35px;margin:0 auto 7px;border:2px solid #c8d2de;background:#fff;border-radius:50%;display:grid;place-items:center;font-weight:800}
+    .rail-step.complete,.rail-step.active{color:#174d88}
+    .rail-step.complete .rail-dot{background:var(--blue);border-color:var(--blue);color:#fff}
+    .rail-step.active .rail-dot{border-color:var(--blue);color:var(--blue);box-shadow:0 0 0 7px rgba(8,120,249,.1)}
+    .rail-copy{padding:0 10px 14px}
+    .rail-copy strong{display:block;margin-bottom:3px}
+    .payment-layout{display:grid;grid-template-columns:minmax(0,1fr) 390px;gap:14px}
+    .payment-main{display:grid;gap:14px;min-width:0}
+    .detail{position:sticky;top:86px;align-self:start;max-height:calc(100vh - 106px);overflow:auto}
+    .detail-grid{display:grid;grid-template-columns:100px 1fr;gap:8px 12px;font-size:12px}
+    .detail-grid dt{color:var(--muted)}
+    .detail-grid dd{margin:0;min-width:0;word-break:break-word}
+    .logs{list-style:none;padding:0;margin:0;display:grid;gap:0}
+    .logs li{position:relative;padding:0 0 15px 26px;font-size:12px}
+    .logs li::before{content:"";position:absolute;width:9px;height:9px;border-radius:50%;background:#9aacbf;left:1px;top:4px}
+    .logs li::after{content:"";position:absolute;width:1px;background:#d7e0e9;left:5px;top:15px;bottom:0}
+    .logs li:last-child::after{display:none}
+    .logs li.current::before{background:var(--blue);box-shadow:0 0 0 4px rgba(8,120,249,.11)}
+    .log-time{display:block;color:#8796a8;font-family:"Cascadia Mono",Consolas,monospace;font-size:10px;margin-bottom:2px}
+    .otp-box{border-top:1px solid var(--line);padding:16px}
+    .otp-box h4{font-size:15px;margin:0 0 5px}
+    .otp-input{font-family:"Cascadia Mono",Consolas,monospace;letter-spacing:.38em;text-align:center;font-size:21px;font-weight:700}
+    .checkline{display:flex;align-items:flex-start;gap:8px;font-size:12px;color:#47586d;margin:12px 0}
+    .checkline input{width:16px;height:16px;min-height:0;margin:2px 0 0;flex:none}
+    .stack{display:grid;gap:14px}
+    .activity{display:grid}
+    .activity-row{display:grid;grid-template-columns:92px 1fr auto;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid #e7edf4}
+    .activity-row:last-child{border-bottom:0}
+    .auth-ledger{margin-top:14px;overflow:hidden}
+    .auth-route{display:grid;grid-template-columns:minmax(170px,1fr) 34px minmax(180px,1fr) 34px minmax(170px,1fr);align-items:center;padding:14px 16px;background:linear-gradient(90deg,#f8fbff 0%,#eef8ff 48%,#f8fbff 100%);border-bottom:1px solid var(--line)}
+    .auth-route-node{min-width:0;border:1px solid #cddff1;background:rgba(255,255,255,.9);border-radius:9px;padding:9px 11px;box-shadow:0 2px 8px rgba(8,70,130,.05)}
+    .auth-route-node span{display:block;color:#6a7c91;font-size:10px;font-weight:800;letter-spacing:.08em;text-transform:uppercase}
+    .auth-route-node strong{display:block;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:13px}
+    .auth-route-arrow{height:1px;background:#6eb7e7;position:relative;margin:0 7px}
+    .auth-route-arrow::after{content:"";position:absolute;right:-1px;top:-3px;border-left:6px solid #3295d4;border-top:3px solid transparent;border-bottom:3px solid transparent}
+    .auth-flow{display:inline-flex;align-items:center;border-radius:5px;padding:3px 7px;font:700 11px/1.2 "Cascadia Mono",Consolas,monospace;white-space:nowrap}
+    .auth-flow.register{background:#e9f3ff;color:#075fb9}.auth-flow.login{background:#eaf8f0;color:#147a43}.auth-flow.login_confirm{background:#f2effa;color:#67509b}.auth-flow.verification{background:#fff7e6;color:#9a6400}
+    .auth-ip{font-family:"Cascadia Mono",Consolas,monospace;font-size:12px;font-weight:700;color:#0b5b91}
+    .auth-device{display:grid;gap:2px;min-width:180px}.auth-device strong{font-size:12px}.auth-device span{color:var(--muted);font-size:11px}
+    .auth-detail-grid{display:grid;grid-template-columns:120px minmax(0,1fr);gap:9px 14px;margin:0;font-size:12px}
+    .auth-detail-grid dt{color:var(--muted)}.auth-detail-grid dd{margin:0;min-width:0;overflow-wrap:anywhere}
+    .auth-xm1{margin:14px 0 0;background:#071b30;color:#c9e6ff;border-radius:8px;padding:12px;white-space:pre-wrap;word-break:break-all;font:11px/1.55 "Cascadia Mono",Consolas,monospace;max-height:180px;overflow:auto}
+    .quick-actions{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+    .quick{min-height:92px;border:1px solid var(--line);background:#fff;border-radius:8px;padding:14px;text-align:left}
+    .quick:hover{border-color:#9dc7f6;background:#f8fbff}
+    .quick strong{display:block;margin-bottom:5px}
+    .quick span{color:var(--muted);font-size:12px}
+    .import-format{font-family:"Cascadia Mono",Consolas,monospace;background:#f5f8fb;border:1px solid var(--line);border-radius:6px;padding:8px 10px;font-size:12px;color:#42566e}
+    .drawer-mask{display:none}
+    .mobile-only,.collapsed-summary{display:none}
+    .mobile-nav{display:none}
+    .toast-wrap{position:fixed;right:20px;bottom:20px;display:grid;gap:8px;z-index:100}
+    .toast{min-width:260px;max-width:420px;background:#10243a;color:#fff;padding:12px 14px;border-radius:8px;box-shadow:var(--shadow);animation:toast-in .2s ease}
+    .toast.error{background:#8f2730}
+    dialog.pin-dialog{width:min(520px,calc(100vw - 28px));border:0;border-radius:12px;padding:0;box-shadow:0 24px 72px rgba(4,26,51,.28);color:var(--ink)}
+    dialog.pin-dialog::backdrop{background:rgba(4,26,51,.55);backdrop-filter:blur(2px)}
+    dialog.log-dialog{width:min(760px,calc(100vw - 28px))}
+    dialog#proxyProviderDialog{max-height:calc(100vh - 28px);overflow:auto}
+    .task-log-body{max-height:min(66vh,640px);overflow:auto}
+    .task-log-summary{display:grid;grid-template-columns:110px 1fr;gap:8px 14px;margin:0 0 18px;font-size:13px}
+    .task-log-summary dt{color:var(--muted)}.task-log-summary dd{margin:0;min-width:0;overflow-wrap:anywhere}
+    .provider-bindings{display:grid;gap:8px;margin-bottom:14px}
+    .provider-binding-row{display:grid;grid-template-columns:minmax(150px,.8fr) minmax(180px,1.1fr) 100px;gap:10px;align-items:center}
+    .provider-binding-row label{display:flex;align-items:center;gap:8px;font-weight:650}.provider-binding-row label input{width:16px;min-height:16px}
+    .provider-table table{min-width:880px}.provider-table td{vertical-align:top}
+    .provider-node{display:grid;gap:2px}.provider-node strong{font-size:12px}.provider-node span{color:var(--muted);font-size:11px;overflow-wrap:anywhere}
+    .provider-state{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+    .dialog-head{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:18px 20px;border-bottom:1px solid var(--line)}
+    .dialog-head h3{margin:0 0 3px;font-size:18px}.dialog-head p{margin:0;color:var(--muted);font-size:12px}
+    .dialog-close{border:0;background:#f1f5f9;border-radius:7px;width:34px;height:34px;font-size:20px;line-height:1}
+    .dialog-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+    @keyframes toast-in{from{opacity:0;transform:translateY(8px)}}
+    @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}}
+    @media(max-width:1380px){
+      .payment-layout{grid-template-columns:1fr}
+      .detail{position:static;max-height:none}
+    }
+    @media(max-width:1080px){
+      .split,.overview-grid{grid-template-columns:1fr}
+    }
+    @media(max-width:820px){
+      body{padding-bottom:74px}
+      .table-wrap:has(.empty) table{min-width:100%}
+      .sidebar{transform:translateX(-100%);transition:transform .2s;width:min(82vw,290px);box-shadow:var(--shadow)}
+      .sidebar.open{transform:translateX(0)}
+      .drawer-mask.open{display:block;position:fixed;inset:0;background:rgba(4,26,51,.48);z-index:45}
+      .shell{margin-left:0}
+      .topbar{height:58px;padding:0 15px;background:var(--navy);border:0;color:#fff}
+      .menu-btn{display:grid;place-items:center;border:0;background:transparent;color:#fff;width:38px;height:38px;border-radius:7px}
+      .menu-btn svg{width:21px;height:21px}
+      .topbar h1{font-size:18px}
+      .local-status{color:#54e793;font-size:11px}
+      .refresh-label{display:none}
+      .main{padding:12px 12px 28px}
+      .stats{grid-template-columns:repeat(4,minmax(118px,1fr));overflow-x:auto;border-radius:9px}
+      .stats{scrollbar-width:none}
+      .stats::-webkit-scrollbar{display:none}
+      .stat{min-height:78px;padding:10px 9px;gap:6px}
+      .stat-icon{width:26px;height:26px;border-radius:7px}
+      .stat-icon svg{width:16px;height:16px}
+      .stat span{white-space:nowrap}
+      .stat b{font-size:21px}
+      .section-head h2{font-size:19px}
+      .form-grid{grid-template-columns:1fr}
+      .register-grid{grid-template-columns:1fr}
+      .form-grid .wide{grid-column:auto}
+      .auth-route{grid-template-columns:1fr;gap:7px}.auth-route-arrow{width:1px;height:16px;margin:0 auto}.auth-route-arrow::after{right:-3px;top:auto;bottom:-1px;border-left:3px solid transparent;border-right:3px solid transparent;border-top:6px solid #3295d4;border-bottom:0}
+      .panel-body{padding:14px}
+      .toolbar{align-items:stretch;flex-direction:column}
+      .toolbar-right,.search{max-width:none;width:100%}
+      .payment-layout{display:block}
+      .detail{margin-top:14px}
+      .mobile-only{display:inline-flex}
+      .payment-create.collapsed form{display:none}
+      .payment-create.collapsed .collapsed-summary{display:block;color:var(--muted);font-size:11px;font-weight:400;margin-top:2px}
+      .rail-step{font-size:10px}
+      .rail-dot{width:31px;height:31px}
+      .rail::before,.rail-fill{top:15px}
+      .activity-row{grid-template-columns:78px 1fr}
+      .activity-row .status{grid-column:2}
+      .quick-actions{grid-template-columns:1fr}
+      .mobile-nav{position:fixed;left:0;right:0;bottom:0;height:68px;background:var(--navy);display:grid;grid-template-columns:repeat(5,1fr);z-index:42;padding-bottom:env(safe-area-inset-bottom);box-shadow:0 -8px 22px rgba(4,26,51,.12)}
+      .mobile-nav button{border:0;background:transparent;color:#8fa6bd;display:grid;place-items:center;align-content:center;gap:3px;font-size:10px}
+      .mobile-nav button.active{color:#2ba7ff}
+      .mobile-nav svg{width:20px;height:20px}
+      .truncate{max-width:230px}
+    }
+    @media(max-width:520px){
+      .top-actions .btn{padding:0 8px}
+      .stats{margin-left:-12px;margin-right:-12px;border-left:0;border-right:0;border-radius:0}
+      .stat{min-width:125px}
+      .section-head{align-items:stretch;flex-direction:column}
+      .section-head>.action-row{width:100%}
+      .section-head>.action-row .btn{flex:1}
+      .task-panel-head{align-items:stretch;flex-direction:column}
+      .task-panel-head>.action-row{width:100%}
+      .task-panel-head>.action-row .btn{flex:1}
+      .task-panel-head>.action-row select{flex:1 1 100%;width:100%!important}
+      .detail-grid{grid-template-columns:82px 1fr}
+      .provider-binding-row{grid-template-columns:1fr}.provider-binding-row select,.provider-binding-row input{width:100%}
+      .flow{padding-left:0;padding-right:0}
+      .panel{border-radius:8px}
+      .toast-wrap{left:12px;right:12px;bottom:84px}
+      .toast{min-width:0;max-width:none}
+      .proxy-tools{align-items:stretch;flex-direction:column}
+      .proxy-tools .proxy-actions{width:100%}
+      .proxy-tools .proxy-actions .btn{flex:1}
+    }
+  </style>
+</head>
+<body>
+  <svg width="0" height="0" style="position:absolute">
+    <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 11.5 12 4l9 7.5M5.5 10v10h13V10M9.5 20v-6h5v6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-user" viewBox="0 0 24 24"><circle cx="12" cy="7.5" r="3.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M5 20c.6-4.5 2.8-6.5 7-6.5s6.4 2 7 6.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-phone" viewBox="0 0 24 24"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M10 5h4M11 18.5h2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-card" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3 9h18M7 15h4" fill="none" stroke="currentColor" stroke-width="1.8"/></symbol>
+    <symbol id="i-pay" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M8 12h8m-3-3 3 3-3 3" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.5-2-3.4-2.4 1A7 7 0 0 0 15 6.2L14.7 4h-4L10.4 6.2A7 7 0 0 0 8.8 7l-2.4-1-2 3.4 2 1.5a7 7 0 0 0 0 2.1l-2 1.5 2 3.4 2.4-1a7 7 0 0 0 1.6.9l.3 2.2h4l.3-2.2a7 7 0 0 0 1.6-.9l2.4 1 2-3.4-2-1.5c.1-.3.1-.7.1-1Z" fill="none" stroke="currentColor" stroke-width="1.45" stroke-linejoin="round"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M12 7v5l3 2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-pulse" viewBox="0 0 24 24"><path d="M3 12h4l2-5 4 10 2-5h6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 7v5h-5M4 17v-5h5M6.2 8A7 7 0 0 1 18.5 7M17.8 16A7 7 0 0 1 5.5 17" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m15.5 15.5 5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><rect x="8" y="8" width="11" height="11" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+    <symbol id="i-menu" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></symbol>
+  </svg>
+  <div class="app">
+    <div id="drawerMask" class="drawer-mask" onclick="toggleMenu(false)"></div>
+    <aside id="sidebar" class="sidebar">
+      <div class="brand"><div class="brand-mark">Go</div><div><strong>GoPay</strong><span>本地运营控制台</span></div></div>
+      <nav class="nav" aria-label="主要导航">
+        <button class="nav-btn active" data-view="overview"><svg><use href="#i-home"/></svg>总览</button>
+        <button class="nav-btn" data-view="register"><svg><use href="#i-user"/></svg>注册与登录</button>
+        <button class="nav-btn" data-view="pool"><svg><use href="#i-phone"/></svg>号码池</button>
+        <button class="nav-btn" data-view="accounts"><svg><use href="#i-card"/></svg>GoPay 账号</button>
+        <button class="nav-btn" data-view="payment"><svg><use href="#i-pay"/></svg>支付中心</button>
+        <button class="nav-btn" data-view="settings"><svg><use href="#i-settings"/></svg>系统配置</button>
+      </nav>
+      <div class="side-foot"><span class="local-dot"></span>仅监听 127.0.0.1<br>关闭启动窗口即可停止服务</div>
+    </aside>
+    <div class="shell">
+      <header class="topbar">
+        <div class="top-left">
+          <button class="menu-btn" aria-label="打开导航" onclick="toggleMenu(true)"><svg><use href="#i-menu"/></svg></button>
+          <h1 id="pageTitle">总览</h1>
+        </div>
+        <div class="top-actions">
+          <span class="local-status"><span class="local-dot"></span>本地运行中</span>
+          <button class="btn secondary sm" onclick="refreshAll(true)"><svg><use href="#i-refresh"/></svg><span class="refresh-label">刷新数据</span></button>
+        </div>
+      </header>
+      <main class="main">
+        <section class="stats" aria-label="实时概览">
+          <div class="stat"><div class="stat-icon"><svg><use href="#i-user"/></svg></div><div><span>GoPay 账号</span><b id="statAccounts">0</b></div></div>
+          <div class="stat"><div class="stat-icon"><svg><use href="#i-phone"/></svg></div><div><span>号码池</span><b id="statPool">0</b></div></div>
+          <div class="stat"><div class="stat-icon"><svg><use href="#i-clock"/></svg></div><div><span>等待 OTP</span><b id="statOtp">0</b></div></div>
+          <div class="stat"><div class="stat-icon"><svg><use href="#i-pulse"/></svg></div><div><span>进行中</span><b id="statRunning">0</b></div></div>
+        </section>
+
+        <section id="view-overview" class="view active">
+          <div class="section-head"><div><h2>运行总览</h2><p>查看本机账号、号码和任务的实时状态。</p></div></div>
+          <div class="overview-grid">
+            <div class="panel">
+              <div class="panel-head"><h3>最近活动</h3><button type="button" class="btn ghost sm" onclick="switchView('payment')">打开支付中心</button></div>
+              <div class="panel-body" id="overviewActivity"></div>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h3>快速操作</h3></div>
+              <div class="panel-body quick-actions">
+                <button class="quick" onclick="switchView('register')"><strong>注册或登录账号</strong><span>从号码池或 SMSBower 创建任务。</span></button>
+                <button class="quick" onclick="switchView('pool')"><strong>导入号码</strong><span>维护手机号与短信接口地址。</span></button>
+                <button class="quick" onclick="switchView('accounts')"><strong>检查账号余额</strong><span>刷新余额或重新登录已有账号。</span></button>
+                <button class="quick" onclick="switchView('payment')"><strong>发起 Midtrans 支付</strong><span>需要手机号、PIN、链接和 OTP。</span></button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="view-register" class="view">
+          <div class="section-head"><div><h2>注册与登录</h2><p>号码池任务自动读取短信并提交注册、登录及 PIN 验证码，也可随时手动输入。</p></div></div>
+          <div class="panel" style="margin-bottom:14px">
+            <div class="panel-head"><h3>新建批量任务</h3><button class="btn ghost sm" onclick="switchView('settings')">配置 SMSBower</button></div>
+            <form id="registerForm" class="panel-body">
+              <div class="form-grid register-grid">
+                <div class="field"><label for="regSource">号码来源</label><select id="regSource"><option value="pool">号码池</option><option value="smsbower">SMSBower</option></select></div>
+                <div class="field"><label for="regMode">任务模式</label><select id="regMode"><option value="register">注册新号</option><option value="login">登录已有号</option></select></div>
+                <div class="field"><label for="regCount">数量</label><input id="regCount" type="number" min="1" max="500" value="1"></div>
+                <div class="field"><label for="regWorkers">线程数</label><input id="regWorkers" type="number" min="1" max="50" value="2"></div>
+                <div class="field"><label id="regPinLabel" for="regPin">设置新 PIN</label><input id="regPin" type="password" inputmode="numeric" maxlength="6" placeholder="请输入 6 位数字" autocomplete="off" aria-describedby="regPinHint"><span id="regPinHint" class="hint">注册成功后，此 PIN 将真正设置到 GoPay 账号。</span></div>
+                <div id="regNewPinField" class="field" hidden><label for="regNewPin">修改后的新 PIN</label><input id="regNewPin" type="password" inputmode="numeric" maxlength="6" placeholder="请输入不同的 6 位 PIN" autocomplete="off" aria-describedby="regNewPinHint" disabled><span id="regNewPinHint" class="hint">修改后会使用新 PIN 二次登录确认。</span></div>
+                <div id="regNewPinConfirmField" class="field" hidden><label for="regNewPinConfirm">再次输入新 PIN</label><input id="regNewPinConfirm" type="password" inputmode="numeric" maxlength="6" placeholder="请再输入一次新 PIN" autocomplete="off" disabled></div>
+                <label id="regChangePinRow" class="checkline wide" hidden><input id="regChangePin" type="checkbox" disabled><span><strong>已有 PIN 时，登录后自动修改为新 PIN</strong><br><span class="hint">只适用于已知原 PIN。修改后会用新 PIN 二次登录确认，因此会再接一条登录 OTP；不是“忘记 PIN”重置。</span></span></label>
+                <div id="regPhonePickerField" class="field wide"><div class="proxy-tools"><label>选择号码（可单选或批量）</label><div class="proxy-actions"><button type="button" class="btn secondary sm" onclick="selectAllEligiblePoolPhones()">全选当前分类</button><button type="button" class="btn ghost sm" onclick="clearPoolPhoneSelection()">清空选择</button></div></div><div id="regPhonePicker" class="phone-picker"></div><span id="regPhonePickerHint" class="hint">注册模式只显示“未注册”，登录模式显示“待登录”和“已入账号库”。</span></div>
+                <div class="field wide"><label for="regProxy">代理池（可选）</label><textarea id="regProxy" class="proxy-list" rows="4" spellcheck="false" autocapitalize="none" autocomplete="off" placeholder="服务器:端口:用户名:密码&#10;服务器:端口@用户名:密码&#10;用户名:密码:服务器:端口&#10;用户名:密码@服务器:端口"></textarea><div class="proxy-tools"><span id="proxyInputState" class="hint">每行一条；支持图示四种格式及 HTTP、HTTPS、SOCKS5，未写协议会自动补 http://。</span></div></div>
+              </div>
+              <div class="action-row" style="margin-top:14px"><button id="regStartBtn" class="btn primary" type="submit">开始批量任务</button><span id="regBatchHint" class="hint">号码池使用导入的短信链接自动接码，每 1 秒轮询；SMSBower 需要先保存 API Key。</span></div>
+            </form>
+          </div>
+          <div class="panel">
+            <div class="panel-head task-panel-head"><h3>最近任务</h3><div class="action-row"><button type="button" class="btn secondary sm" onclick="loadJobs(true)"><svg><use href="#i-refresh"/></svg>刷新</button><button type="button" class="btn danger sm" onclick="clearFinishedTasks('register',this)">清理已结束任务</button></div></div>
+            <div class="table-wrap"><table><thead><tr><th>任务 ID</th><th>手机号</th><th>来源</th><th>模式</th><th>状态</th><th>消息</th><th>验证码</th><th>操作</th></tr></thead><tbody id="registerRows"></tbody></table></div>
+          </div>
+        </section>
+
+        <section id="view-pool" class="view">
+          <div class="section-head"><div><h2>号码池</h2><p>导入手机号及对应短信接口，供注册、重新登录和取码使用。</p></div><div class="action-row"><button class="btn danger sm" onclick="clearPool()">清空号码池</button></div></div>
+          <div class="split">
+            <div class="panel">
+              <div class="panel-head"><h3>导入号码</h3></div>
+              <form id="poolForm" class="panel-body">
+                <div class="field"><label for="poolImportState">导入分类</label><select id="poolImportState"><option value="unregistered">未注册（用于注册新号）</option><option value="login_required">已注册待登录</option></select></div>
+                <div class="field"><label for="poolText">每行一个号码</label><div class="import-format">+628xxxxxxxxxx----https://短信接口地址</div><textarea id="poolText" placeholder="+6281234567890----https://example.com/sms/123"></textarea></div>
+                <button id="poolImportBtn" class="btn primary" type="submit" style="margin-top:12px">导入号码</button>
+              </form>
+            </div>
+            <div class="panel">
+              <div class="panel-head"><h3>号码明细</h3><span id="poolCountLabel" class="muted"></span></div>
+              <div class="panel-body" style="padding-bottom:8px"><div class="toolbar" style="margin:0"><div class="toolbar-left"><div class="search"><svg><use href="#i-search"/></svg><input id="poolSearch" placeholder="搜索手机号" oninput="renderPool()"></div><select id="poolStateFilter" onchange="renderPool()" style="width:auto"><option value="all">全部分类</option><option value="unregistered">未注册</option><option value="login_required">待登录</option><option value="registered">已入账号库</option></select></div><div class="toolbar-right"><button class="btn secondary sm" type="button" onclick="setSelectedPoolState('unregistered')">标为未注册</button><button class="btn secondary sm" type="button" onclick="setSelectedPoolState('login_required')">标为待登录</button></div></div></div>
+              <div class="table-wrap"><table><thead><tr><th style="width:42px"><input class="pool-check" type="checkbox" id="poolSelectVisible" onchange="toggleVisiblePoolPhones(this.checked)" aria-label="选择当前列表"></th><th>手机号</th><th>短信接口</th><th>账号分类</th><th>任务状态</th><th>操作</th></tr></thead><tbody id="poolRows"></tbody></table></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="view-accounts" class="view">
+          <div class="section-head"><div><h2>GoPay 账号</h2><p>查询余额、重新登录或清理本机保存的账号数据。</p></div><div class="action-row"><button class="btn danger sm" onclick="deleteAllAccounts()">删除全部账号</button></div></div>
+          <div class="panel">
+<div class="panel-head"><h3>账号列表</h3><div class="action-row"><label style="display:inline-flex;align-items:center;gap:6px;font-size:12px;color:#47586d;cursor:pointer;white-space:nowrap" title="勾选后，列表和单笔支付下拉框只显示 本机已保存 PIN 且 未使用/未绑定/有余额 的账号"><input id="accountFilterUsable" type="checkbox" onchange="toggleAccountFilter()" style="width:15px;height:15px;min-height:0;margin:0">只显示可用账号</label><button class="btn secondary sm" onclick="loadAccounts(true)"><svg><use href="#i-refresh"/></svg>刷新</button></div></div>
+<div class="panel-body" style="padding-top:0"><div class="action-row"><button id="phoneTypeAll" class="btn secondary sm" onclick="setPhoneTypeFilter('all')">全部账号</button><button id="phoneTypeLong" class="btn ghost sm" onclick="setPhoneTypeFilter('long_term')">长效手机号</button><button id="phoneTypeShort" class="btn ghost sm" onclick="setPhoneTypeFilter('short_term')">短效手机号</button><span class="hint">长效号用于长期持有与恢复；短效号单独管理。</span></div></div>
+            <div class="panel-body" style="padding-bottom:4px"><div class="search"><svg><use href="#i-search"/></svg><input id="accountSearch" placeholder="搜索手机号或 Customer ID" oninput="renderAccounts()"></div></div>
+<div class="table-wrap"><table><thead><tr><th>手机号</th><th>类型</th><th>本地号</th><th>余额</th><th>状态</th><th>PIN 状态</th><th>短信号码</th><th>Customer ID</th><th>操作</th></tr></thead><tbody id="accountRows"></tbody></table></div>
+          </div>
+          <div class="panel auth-ledger">
+            <div class="panel-head"><div><h3>认证环境轨迹</h3><span id="authEnvironmentMeta" class="hint">登录和注册使用的模拟设备与出口网络</span></div><div class="action-row"><select id="authEnvironmentFlow" class="sm" aria-label="认证类型" onchange="renderAuthEnvironments()" style="width:auto;min-height:31px;padding:4px 28px 4px 9px"><option value="all">全部流程</option><option value="register">注册</option><option value="login">登录</option><option value="login_confirm">二次登录</option></select><button class="btn secondary sm" onclick="loadAuthEnvironments(true)"><svg><use href="#i-refresh"/></svg>刷新环境</button></div></div>
+            <div id="authEnvironmentRoute" class="auth-route" aria-live="polite">
+              <div class="auth-route-node"><span>模拟设备</span><strong>等待认证记录</strong></div><i class="auth-route-arrow" aria-hidden="true"></i><div class="auth-route-node"><span>出口网络</span><strong>等待 IP 探测</strong></div><i class="auth-route-arrow" aria-hidden="true"></i><div class="auth-route-node"><span>认证流程</span><strong>注册 / 登录</strong></div>
+            </div>
+            <div class="panel-body" style="padding-bottom:4px"><div class="search"><svg><use href="#i-search"/></svg><input id="authEnvironmentSearch" placeholder="搜索手机号、IP 或设备" oninput="renderAuthEnvironments()"></div></div>
+            <div class="table-wrap"><table style="min-width:1050px"><thead><tr><th>记录时间</th><th>流程</th><th>手机号</th><th>出口 IP</th><th>网络路径</th><th>模拟设备</th><th>系统 / App</th><th>操作</th></tr></thead><tbody id="authEnvironmentRows"></tbody></table></div>
+          </div>
+          <div class="panel" style="margin-top:14px">
+            <div class="panel-head task-panel-head"><h3>批量 PIN（重置 / 设置）</h3><span class="muted">重置使用本机已保存的 PIN 当旧 PIN，无需接码；并发最多 10</span></div>
+            <form id="pinBatchForm" class="panel-body">
+              <div class="action-row" style="margin-top:2px">
+                <label class="checkline" style="margin:0"><input type="radio" name="pinBatchMode" value="reset" checked onchange="onPinBatchModeChange()"><span>重置 PIN（已设置·本机已保存）</span></label>
+                <label class="checkline" style="margin:0"><input type="radio" name="pinBatchMode" value="setup" onchange="onPinBatchModeChange()"><span>设置 PIN（无 PIN 账号）</span></label>
+              </div>
+              <div class="form-grid">
+                <div class="field wide"><label for="pinBatchPhones">手机号（每行一个）</label><textarea id="pinBatchPhones" rows="5" placeholder="每行一个手机号，例如：&#10;8512345678&#10;8512345679"></textarea></div>
+                <div class="field"><label for="pinBatchNewPin">新 PIN（6 位）</label><input id="pinBatchNewPin" type="password" inputmode="numeric" maxlength="6" placeholder="如 147258" autocomplete="off"></div>
+                <div class="field"><label for="pinBatchWorkers">并发数</label><input id="pinBatchWorkers" type="number" value="2" min="1" max="10"></div>
+              </div>
+              <div class="action-row" style="margin-top:8px">
+                <button type="button" class="btn secondary sm" onclick="fillPinBatchAccounts()" id="pinBatchFillBtn">填入可重置的账号</button>
+                <label class="checkline" style="margin:0"><input id="pinBatchSkip" type="checkbox" checked><span id="pinBatchSkipLabel">跳过本机未保存 PIN 的账号</span></label>
+              </div>
+              <div class="action-row" style="margin-top:14px"><button class="btn primary" type="submit" id="pinBatchSubmitBtn">开始批量重置 PIN</button><span id="pinBatchHint" class="hint">重置直接使用本机已保存的 PIN 验证并改为新 PIN。</span></div>
+            </form>
+            <div id="pinBatchStatus" class="panel-body"><span class="muted">还没有批量 PIN 任务。</span></div>
+          </div>
+        </section>
+
+        <section id="view-payment" class="view">
+          <div class="section-head"><div><h2>支付中心</h2><p>绑定 GoPay、处理短信 OTP，并完成 Midtrans 支付。</p></div></div>
+          <div class="panel" style="margin-bottom:14px">
+            <div class="panel-head"><h3>账号支付</h3><div class="action-row"><button type="button" class="btn secondary sm" onclick="loadAccounts(true)"><svg><use href="#i-refresh"/></svg>刷新</button><span class="hint">每张卡片粘贴一条 Midtrans 链接即可对该账号发起支付</span></div></div>
+            <div class="panel-body" style="padding-bottom:0">
+              <div class="form-grid">
+                <div class="field wide"><label for="cardPayProxy">卡片代理池（可选，每行一条）</label><textarea id="cardPayProxy" class="proxy-list" rows="3" spellcheck="false" autocapitalize="none" autocomplete="off" placeholder="服务器:端口:用户名:密码"></textarea><div class="hint">支持四种常见排列，未写协议自动补 http://；留空使用账号自己的代理。</div></div>
+              </div>
+            </div>
+            <div id="accountPayGrid" class="panel-body acc-grid"><span class="muted">加载账号中…</span></div>
+          </div>
+          <div class="panel" style="margin-bottom:14px">
+            <div class="panel-head"><h3>批量支付 Midtrans 链接</h3><span class="collapsed-summary">每行一条链接 · 直接选用本地 GoPay 账号绑定，失败自动换号</span></div>
+            <form id="batchPayForm" class="panel-body">
+              <div class="form-grid register-grid">
+                <div class="field wide"><label for="batchPayLinks">Midtrans 链接（每行一条）</label><textarea id="batchPayLinks" class="proxy-list" rows="6" spellcheck="false" autocapitalize="none" autocomplete="off" placeholder="https://app.midtrans.com/snap/v4/redirection/..."></textarea></div>
+                <div class="field"><label for="batchPayWorkers">线程数</label><input id="batchPayWorkers" type="number" min="1" max="20" value="2"></div>
+                <div class="field"><label for="batchPayPin">付款 PIN（可选，覆盖所有账号）</label><input id="batchPayPin" type="password" inputmode="numeric" maxlength="6" placeholder="留空使用账号已保存的 PIN" autocomplete="off"></div>
+                <div class="field wide"><label for="batchPayProxy">代理池（可选）</label><textarea id="batchPayProxy" class="proxy-list" rows="3" spellcheck="false" autocapitalize="none" autocomplete="off" placeholder="用户名:密码@服务器:端口"></textarea><div class="proxy-tools"><button type="button" class="btn ghost sm" onclick="fillLocalClash('batchPayProxy')">本地 Clash</button><span class="hint">支持四种常见排列，未写协议自动补 http://；留空使用账号自己的代理。</span></div></div>
+                <label class="checkline wide"><input id="batchPayAutoPin" type="checkbox" checked><span><strong>自动处理 PIN</strong><br><span class="hint">直接选用本地账号：有 PIN 直接用，没有 PIN 才设置/重置，失败自动换下一个账号。</span></span></label>
+                <div class="field"><label for="batchPayTargetPin">新 PIN（账号无 PIN 时设置）</label><input id="batchPayTargetPin" type="password" inputmode="numeric" maxlength="6" value="147258" placeholder="6 位数字" autocomplete="off"></div>
+                <label class="checkline wide"><input id="batchPayRelease" type="checkbox" checked><span><strong>支付完成后释放账号，可复用于下一条链接</strong><br><span class="hint">余额不足、已绑定或 PIN 处理失败的账号会被自动跳过。</span></span></label>
+              </div>
+              <div class="action-row" style="margin-top:14px"><button id="batchPayStartBtn" class="btn primary" type="submit">开始批量支付</button><span id="batchPayHint" class="hint">自动处理 PIN 时本地已有 PIN 直接使用，缺失才设置/重置；支付结束后账号自动释放。</span></div>
+            </form>
+          </div>
+          <div class="panel" style="margin-bottom:14px">
+            <div class="panel-head task-panel-head"><h3>批量支付进度</h3></div>
+            <div id="batchPayStatus" class="panel-body"><span class="muted">还没有批量任务。创建任务后，这里会显示进度。</span></div>
+          </div>
+          <div class="panel" style="margin-bottom:14px">
+            <div class="panel-head task-panel-head"><h3>筛号池日志</h3><div class="action-row"><button type="button" class="btn ghost sm" onclick="loadPoolLog(true)">刷新</button></div></div>
+            <div id="poolLog" class="panel-body"><span class="muted">暂无筛号记录。批量任务启动后，SMSBower 预登录池的筛号进度会实时显示在这里。</span></div>
+          </div>
+          <div class="payment-layout">
+            <div class="payment-main">
+              <div class="split">
+                <div id="paymentCreate" class="panel payment-create collapsed">
+                  <div class="panel-head"><div><h3>发起支付任务</h3><span class="collapsed-summary">账号 · Midtrans 链接 · 代理（可选）</span></div><button id="paymentFormToggle" class="btn ghost sm mobile-only" type="button" aria-expanded="false" onclick="togglePaymentForm()">展开</button></div>
+                  <form id="paymentForm" class="panel-body">
+                    <div class="form-grid">
+                      <div class="field wide"><label for="payPhone">GoPay 账号</label><select id="payPhone"><option value="">请选择账号</option></select></div>
+                      <div class="field"><label for="payPin">付款 PIN（可选）</label><input id="payPin" type="password" inputmode="numeric" maxlength="6" placeholder="留空使用账号已保存的 PIN" autocomplete="off"><span id="payPinHint" class="hint">选择账号后会显示本地 PIN 保存状态。</span></div>
+                      <div class="field"><label for="payProxy">代理（可选）</label><input id="payProxy" placeholder="留空使用账号代理"><button type="button" class="btn ghost sm" style="justify-self:start;min-height:28px" onclick="fillLocalClash('payProxy')">本地 Clash</button></div>
+                      <div class="field wide"><label for="midtransUrl">Midtrans 链接</label><input id="midtransUrl" type="url" placeholder="https://app.midtrans.com/snap/v4/redirection/..."></div>
+                    </div>
+                    <div class="warning" style="margin-top:13px">此操作可能直接产生真实扣款。请确认账号、订单和金额都属于你本人。</div>
+                    <label class="checkline"><input id="payAcknowledge" type="checkbox" onchange="updatePayButton()">我已核对账号与 Midtrans 订单，并理解支付可能立即扣款。</label>
+                    <button id="payStartBtn" class="btn primary" type="submit" disabled style="width:100%">确认并开始支付</button>
+                  </form>
+                </div>
+                <div class="panel">
+                  <div class="panel-head"><h3>支付流程</h3><span id="flowStatus" class="muted">尚未选择任务</span></div>
+                  <div class="flow">
+                    <div class="rail"><div id="railFill" class="rail-fill"></div>
+                      <div class="rail-step"><div class="rail-dot">1</div>检查账号</div>
+                      <div class="rail-step"><div class="rail-dot">2</div>绑定 Midtrans</div>
+                      <div class="rail-step"><div class="rail-dot">3</div>等待 OTP</div>
+                      <div class="rail-step"><div class="rail-dot">4</div>验证 PIN</div>
+                      <div class="rail-step"><div class="rail-dot">5</div>扣款结果</div>
+                    </div>
+                    <div id="railCopy" class="rail-copy"><strong>准备开始</strong><span class="muted">创建任务后，这里会显示当前支付阶段。</span></div>
+                  </div>
+                </div>
+              </div>
+              <div class="panel">
+                <div class="panel-head task-panel-head"><h3>支付任务</h3><div class="action-row"><select id="paymentFilter" class="sm" onchange="renderPaymentJobs()" style="min-height:32px;width:125px"><option value="">全部状态</option><option value="running">进行中</option><option value="waiting_otp">等待 OTP</option><option value="success">成功</option><option value="failed">失败</option></select><button type="button" class="btn secondary sm" onclick="loadJobs(true)"><svg><use href="#i-refresh"/></svg>刷新</button><button type="button" class="btn danger sm" onclick="clearFinishedTasks('payment',this)">清理已结束任务</button></div></div>
+                <div class="table-wrap"><table><thead><tr><th>任务 ID</th><th>手机号</th><th>当前阶段</th><th>状态</th><th>更新时间</th><th>操作</th></tr></thead><tbody id="paymentRows"></tbody></table></div>
+              </div>
+            </div>
+            <aside id="paymentDetail" class="panel detail"><div class="empty"><strong>选择支付任务</strong>任务详情、日志和 OTP 输入会显示在这里。</div></aside>
+          </div>
+        </section>
+
+        <section id="view-settings" class="view">
+          <div class="section-head"><div><h2>系统配置</h2><p>设置 SMSBower 短信接口。密钥只保存在本机配置文件中。</p></div></div>
+          <div class="panel" style="max-width:720px">
+            <div class="panel-head"><h3>SMSBower 配置</h3><span id="smsConfigState" class="status failed">未配置</span></div>
+            <form id="smsForm" class="panel-body">
+              <div class="form-grid">
+                <div class="field wide"><label for="smsKey">API Key</label><input id="smsKey" type="password" placeholder="留空可保留现有密钥" autocomplete="off"></div>
+                <div class="field wide"><label for="smsBase">Base URL</label><input id="smsBase" type="url" value="https://smsbower.page"></div>
+                <div class="field"><label for="smsService">服务代码</label><input id="smsService" value="ni"></div>
+                <div class="field"><label for="smsCountry">国家代码</label><input id="smsCountry" value="6"></div>
+                <div class="field"><label for="smsMinPrice">最低价格（美元）</label><input id="smsMinPrice" type="number" min="0" step="0.001" placeholder="留空不限制"></div>
+                <div class="field"><label for="smsMaxPrice">最高价格（美元）</label><input id="smsMaxPrice" type="number" min="0" step="0.001" placeholder="留空不限制"></div>
+              </div>
+              <div class="notice" style="margin-top:13px">最低价需与最高价同时设置，取号只会请求该价格区间；留空则不限制。保存后无需手动编辑 env 文件。</div>
+              <button id="smsSaveBtn" class="btn primary" type="submit" style="margin-top:14px">保存配置</button>
+            </form>
+          </div>
+          <div class="panel" style="max-width:720px">
+            <div class="panel-head"><h3>人机验证（Alibaba CAPTCHA）</h3><span id="captchaConfigState" class="status failed">未配置</span></div>
+            <form id="captchaForm" class="panel-body">
+              <div class="form-grid">
+                <div class="field wide"><label for="captchaSolverifyKey">Solverify API Key</label><input id="captchaSolverifyKey" type="password" placeholder="留空可保留现有密钥" autocomplete="off"></div>
+                <div class="field wide"><label for="captchaSolverifyBase">Solverify Base URL</label><input id="captchaSolverifyBase" type="url" value="https://solver.solverify.net"></div>
+                <div class="field"><label for="captchaScene">scene_id</label><input id="captchaScene" value="1mbz0gpl6"></div>
+                <div class="field"><label for="captchaPrefix">prefix</label><input id="captchaPrefix" value="y1rdnbp"></div>
+                <div class="field"><label for="captchaRegion">region</label><input id="captchaRegion" value="sgp"></div>
+              </div>
+              <div class="notice" style="margin-top:13px">纯协议支付遇到 Midtrans 人机验证时，使用 Solverify 自动解 Alibaba CAPTCHA；未配置时任务日志会提示手动完成。</div>
+              <button id="captchaSaveBtn" class="btn primary" type="submit" style="margin-top:14px">保存配置</button>
+            </form>
+          </div>
+          <div class="panel" style="max-width:720px">
+            <div class="panel-head"><h3>代理设置（本地 Clash）</h3><span id="proxyConfigState" class="status failed">未启用</span></div>
+            <form id="proxyForm" class="panel-body">
+              <div class="form-grid">
+                <div class="field wide"><label for="proxyClashAddress">Clash 代理地址</label><input id="proxyClashAddress" value="http://127.0.0.1:7897" placeholder="http://127.0.0.1:7897" autocapitalize="none" autocomplete="off"><span class="hint">本机 Clash 的 HTTP 混合端口地址，默认 http://127.0.0.1:7897。</span></div>
+                <div class="field wide"><label for="proxyDefault">默认代理（留空=不设置）</label><input id="proxyDefault" placeholder="http://127.0.0.1:7897 或远程代理" autocapitalize="none" autocomplete="off"><span class="hint">设为默认后，单笔/批量支付在“代理”留空时自动使用该地址。</span></div>
+              </div>
+              <div class="action-row" style="margin-top:13px">
+                <button type="button" class="btn secondary" onclick="enableLocalClash()">启用本地 Clash 为默认</button>
+                <button type="button" class="btn ghost" onclick="testLocalClash(this)">测试 Clash</button>
+                <button type="button" class="btn ghost" onclick="clearDefaultProxy()">清除默认代理</button>
+              </div>
+              <div class="notice" style="margin-top:13px">支付表单和批量支付里的“本地 Clash”按钮会把上面的 Clash 地址填入“代理”框；支付链路（GoPay 请求 + 人机验证页面 + Solverify 解证）都会走这个代理，保证出口 IP 一致。</div>
+              <button id="proxySaveBtn" class="btn primary" type="submit" style="margin-top:14px">保存设置</button>
+            </form>
+          </div>
+          <div class="panel" style="max-width:1080px">
+            <div class="panel-head"><div><h3>代理服务商</h3><span class="hint">统一供注册/登录、手机号换绑和支付使用</span></div><button class="btn primary sm" type="button" onclick="openProxyProviderDialog()">新增服务商</button></div>
+            <div class="panel-body">
+              <div class="provider-bindings">
+                <div class="provider-binding-row"><label><input id="proxyBindRegistrationEnabled" type="checkbox">注册 / 登录</label><select id="proxyBindRegistrationProvider"></select><input id="proxyBindRegistrationCountry" maxlength="2" value="ID" placeholder="国家 ISO"></div>
+                <div class="provider-binding-row"><label><input id="proxyBindPhoneChangeEnabled" type="checkbox">手机号换绑</label><select id="proxyBindPhoneChangeProvider"></select><input id="proxyBindPhoneChangeCountry" maxlength="2" value="ID" placeholder="国家 ISO"></div>
+                <div class="provider-binding-row"><label><input id="proxyBindPaymentEnabled" type="checkbox">支付</label><select id="proxyBindPaymentProvider"></select><input id="proxyBindPaymentCountry" maxlength="2" value="ID" placeholder="国家 ISO"></div>
+              </div>
+              <div class="action-row" style="margin-bottom:14px"><button class="btn primary sm" type="button" onclick="saveProxyProviderBindings(this)">保存业务绑定</button><span class="hint">启用后自动生成独立 session；手动填写的任务代理仍优先。</span></div>
+              <div class="table-wrap provider-table"><table><thead><tr><th>服务商</th><th>类型</th><th>节点预览</th><th>会话</th><th>状态</th><th>操作</th></tr></thead><tbody id="proxyProviderRows"><tr><td colspan="6"><div class="empty"><strong>暂无代理服务商</strong>点击“新增服务商”创建。</div></td></tr></tbody></table></div>
+              <div id="proxyProviderTestResult" class="hint" style="margin-top:10px"></div>
+            </div>
+          </div>
+          <div class="panel" style="max-width:720px">
+            <div class="panel-head"><h3>环境体检</h3><span id="envCheckState" class="status failed">未检查</span></div>
+            <div class="panel-body">
+              <div class="notice" style="margin-top:0">检查 Python、依赖、配置文件、Clash 代理与出口 IP、SMSBower 余额、支付链路（Midtrans/GWA/Customer/Solverify 经代理连通）、可支付账号数等，帮助定位注册/登录慢、NO_NUMBERS、支付失败等问题。</div>
+              <div class="action-row" style="margin-top:13px">
+                <button type="button" class="btn primary" onclick="runEnvCheck(this)">开始体检</button>
+              </div>
+              <div id="envCheckResult" style="margin-top:13px;font-size:13px"></div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+    <nav class="mobile-nav" aria-label="移动端导航">
+      <button class="active" data-view="overview"><svg><use href="#i-home"/></svg>总览</button>
+      <button data-view="register"><svg><use href="#i-user"/></svg>注册</button>
+      <button data-view="accounts"><svg><use href="#i-card"/></svg>账号</button>
+      <button data-view="payment"><svg><use href="#i-pay"/></svg>支付</button>
+      <button data-view="settings"><svg><use href="#i-settings"/></svg>设置</button>
+    </nav>
+    <dialog id="pinDialog" class="pin-dialog">
+      <div class="dialog-head"><div><h3>修改 GoPay PIN</h3><p id="pinDialogPhone">-</p></div><button class="dialog-close" type="button" aria-label="关闭" onclick="closePinDialog()">×</button></div>
+      <form id="pinForm" class="panel-body">
+        <input id="pinPhone" type="hidden">
+        <div class="notice">仅支持知道旧 PIN 时修改。如果忘记旧 PIN，请使用下方“重置PIN”按钮。</div>
+        <div class="form-grid" style="margin-top:14px">
+          <div class="field wide"><label for="oldPin">原 PIN</label><input id="oldPin" type="password" inputmode="numeric" maxlength="6" placeholder="6 位数字" autocomplete="off" required></div>
+          <div class="field"><label for="newPin">新 PIN</label><input id="newPin" type="password" inputmode="numeric" maxlength="6" placeholder="6 位数字" autocomplete="off" required></div>
+          <div class="field"><label for="confirmPin">再次输入新 PIN</label><input id="confirmPin" type="password" inputmode="numeric" maxlength="6" placeholder="确认新 PIN" autocomplete="off" required></div>
+        </div>
+        <div class="dialog-actions"><button class="btn secondary" type="button" onclick="closePinDialog()">取消</button><button id="pinSubmitBtn" class="btn primary" type="submit">验证并修改</button></div>
+      </form>
+    </dialog>
+    <dialog id="taskLogDialog" class="pin-dialog log-dialog">
+      <div class="dialog-head"><div><h3>任务日志</h3><p id="taskLogDialogTitle">-</p></div><button class="dialog-close" type="button" aria-label="关闭任务日志" onclick="closeTaskLog()">×</button></div>
+      <div id="taskLogBody" class="panel-body task-log-body"></div>
+      <div class="dialog-actions" style="padding:0 20px 18px"><button class="btn secondary" type="button" onclick="closeTaskLog()">关闭</button></div>
+    </dialog>
+    <dialog id="proxyProviderDialog" class="pin-dialog log-dialog">
+      <div class="dialog-head"><div><h3 id="proxyProviderDialogTitle">新增代理服务商</h3><p>密码只保存在服务器本机配置，不会通过 API 回传。</p></div><button class="dialog-close" type="button" aria-label="关闭" onclick="closeProxyProviderDialog()">×</button></div>
+      <form id="proxyProviderForm" class="panel-body">
+        <input id="proxyProviderId" type="hidden">
+        <div class="form-grid">
+          <div class="field"><label for="proxyProviderName">名称</label><input id="proxyProviderName" placeholder="例如 IPRoyal 印尼住宅" required></div>
+          <div class="field"><label for="proxyProviderKind">类型</label><select id="proxyProviderKind"><option value="custom">自定义</option><option value="iproyal">IPRoyal</option><option value="cliproxy">Cliproxy</option><option value="711proxy">711proxy</option><option value="cakeip">CakeIP</option></select></div>
+          <label class="checkline wide"><input id="proxyProviderEnabled" type="checkbox" checked><span>启用服务商</span></label>
+          <div class="field"><label for="proxyProviderScheme">协议</label><select id="proxyProviderScheme"><option value="http">HTTP</option><option value="https">HTTPS</option><option value="socks5">SOCKS5</option></select></div>
+          <div class="field"><label for="proxyProviderHost">主机</label><input id="proxyProviderHost" placeholder="proxy.example.com"></div>
+          <div class="field"><label for="proxyProviderPort">端口</label><input id="proxyProviderPort" type="number" min="1" max="65535" placeholder="9000"></div>
+          <div class="field"><label for="proxyProviderTTL">会话 TTL（分钟）</label><input id="proxyProviderTTL" type="number" min="1" max="1440" value="30"></div>
+          <div class="field"><label for="proxyProviderUsername">用户名</label><input id="proxyProviderUsername" autocomplete="off"></div>
+          <div class="field"><label for="proxyProviderPassword">密码</label><input id="proxyProviderPassword" type="password" placeholder="留空保留现有密码" autocomplete="new-password"></div>
+          <div class="field wide"><label for="proxyProviderUsernameTemplate">用户名模板</label><input id="proxyProviderUsernameTemplate" placeholder="{username}_area-{country}_session-{session}"><span class="hint">支持 {username}、{country}、{country_lower}、{session}、{ttl}。</span></div>
+          <div class="field wide"><label for="proxyProviderPasswordTemplate">密码模板</label><input id="proxyProviderPasswordTemplate" placeholder="{password}"><span class="hint">支持 {password} 及相同的国家、会话占位符。</span></div>
+          <div class="field wide"><label for="proxyProviderURLTemplates">代理 URL 模板（可选，每行一条）</label><textarea id="proxyProviderURLTemplates" rows="4" spellcheck="false" placeholder="http://{username}:{password}@proxy.example.com:9000&#10;支持 {country} / {country_lower} / {session} / {ttl}"></textarea><span class="hint">填写 URL 模板时可不填主机和端口，多行会按任务轮换。</span></div>
+          <label class="checkline wide"><input id="proxyProviderClearPassword" type="checkbox"><span>清除已保存密码</span></label>
+        </div>
+        <div class="dialog-actions"><button class="btn secondary" type="button" onclick="closeProxyProviderDialog()">取消</button><button class="btn primary" type="submit">保存服务商</button></div>
+      </form>
+    </dialog>
+    <dialog id="authEnvironmentDialog" class="pin-dialog log-dialog">
+      <div class="dialog-head"><div><h3>认证环境详情</h3><p id="authEnvironmentDialogTitle">-</p></div><button class="dialog-close" type="button" aria-label="关闭认证环境详情" onclick="closeAuthEnvironment()">×</button></div>
+      <div id="authEnvironmentDetail" class="panel-body task-log-body"></div>
+      <div class="dialog-actions" style="padding:0 20px 18px"><button class="btn secondary" type="button" onclick="closeAuthEnvironment()">关闭</button></div>
+    </dialog>
+    <div id="toastWrap" class="toast-wrap" aria-live="polite"></div>
+  </div>
+  <script>
+var state={accounts:[],pool:[],registerJobs:[],paymentJobs:[],paymentBatches:[],authEnvironments:[],authEnvironmentMeta:{},sms:{},captcha:{},proxyConfig:{},proxyProviders:[],proxyBindings:{},selectedPaymentId:"",selectedPoolPhones:{},activeView:"overview",phoneTypeFilter:"all"};
+    var titles={overview:"总览",register:"注册与登录",pool:"号码池",accounts:"GoPay 账号",payment:"支付中心",settings:"系统配置"};
+    function icon(id){return '<svg><use href="#'+id+'"></use></svg>'}
+    function esc(value){return String(value==null?"":value).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
+    function fmt(value){if(!value)return "-";var d=new Date(value);return isNaN(d)?esc(value):d.toLocaleString("zh-CN",{hour12:false})}
+    function shortTime(value){if(!value)return "-";var d=new Date(value);return isNaN(d)?esc(value):d.toLocaleTimeString("zh-CN",{hour12:false})}
+    function digits(value){return String(value||"").replace(/\D/g,"")}
+    function statusText(s){return {running:"进行中",refreshing_token:"刷新登录",relogin:"自动重登",submitting_phone:"提交新号",rotating:"自动换号",verifying_otp:"验证 OTP",completing:"同步中",waiting_otp:"等待 OTP",number_acquired:"已取号",code_received:"已收到 OTP",completed:"已完成",cancelled:"已取消",success:"成功",failed:"失败",done:"已完成",available:"可用",used:"使用中",used_failed:"失败",used_success:"已成功",reserved:"绑定中",no_balance:"余额不足",login_failed:"登录失败",registered:"已注册",already_registered:"已存在",missing:"未设置",unknown:"未检测"}[s]||s||"未知"}
+    function statusBadge(s){var k=s||"unknown";return '<span class="status '+esc(k)+'">'+esc(statusText(k))+'</span>'}
+    function fmtRemain(sec){sec=Math.max(0,Math.floor(Number(sec)||0));var m=Math.floor(sec/60),s2=sec%60;return m+"分"+(s2<10?"0":"")+s2+"秒"}
+    function smsBadge(x){var s=x.sms_activation_status||"unavailable",auto=!!x.sms_auto_capable,k=auto?"success":s==="completed"?"done":s==="unknown"?"waiting_otp":"failed",label=x.sms_activation_label||(auto?"自动接码":s==="completed"?"已释放":"不可自动接码");if(x.sms_auto_source==="smsbower"&&s==="active"&&typeof x.sms_remaining_sec==="number"&&x.sms_remaining_sec>=0){label+=" · 剩 "+fmtRemain(x.sms_remaining_sec)}return '<span class="status '+k+'">'+esc(label)+'</span>'}
+    function elapsedUseLabel(value){if(!value)return "";var usedAt=new Date(value).getTime();if(!isFinite(usedAt))return "";var minutes=Math.max(0,Math.floor((Date.now()-usedAt)/60000)),hours=Math.floor(minutes/60),mins=minutes%60;return "冷却 "+hours+"小时"+mins+"分"}
+    function accountStatusCell(x){var last=x.last_used_at||"",cooldown=elapsedUseLabel(last);return '<div class="account-status">'+statusBadge(x.use_status||"success")+(cooldown?'<span class="cooldown-label" data-last-used="'+esc(last)+'" title="上次使用：'+esc(fmt(last))+'">'+esc(cooldown)+'</span>':'')+'</div>'}
+    function refreshCooldownLabels(){var rows=document.querySelectorAll(".cooldown-label[data-last-used]");for(var i=0;i<rows.length;i++){rows[i].textContent=elapsedUseLabel(rows[i].getAttribute("data-last-used"))}}
+    function pinBadge(x){var s=x.pin_setup_status||"unknown",change=x.pin_change_status||"",k=s==="configured"?"success":s==="missing"?"missing":"unknown",label=s==="configured"?"已设置":s==="missing"?"未设置":"未检测";if(change==="confirmed"){label="已修改并确认";k="success"}else if(change==="changed_unconfirmed"){label="已修改 · 待二次确认";k="unknown"}else if(change==="unverified"){label="已有 PIN · 未验证";k="unknown"}else if(change==="unknown"||change==="setup_unknown"){label="PIN 结果不确定";k="unknown"}else if(change==="setup_unconfirmed"){label="已设置 · 待状态确认";k="unknown"}label+=" · "+(x.pin_saved?"本机已保存":"本机未保存");return '<span class="status '+k+'" title="'+esc(x.pin_change_message||"")+'">'+esc(label)+'</span>'}
+    async function api(url,options){
+      var opts=options||{};opts.headers=Object.assign({"Content-Type":"application/json"},opts.headers||{});
+      var response=await fetch(url,opts);var data={};try{data=await response.json()}catch(e){}
+      if(!response.ok)throw new Error(data.error||("请求失败："+response.status));return data
+    }
+    function toast(message,type){
+      var el=document.createElement("div");el.className="toast"+(type==="error"?" error":"");el.textContent=message;
+      document.getElementById("toastWrap").appendChild(el);setTimeout(function(){el.remove()},3600)
+    }
+    function setBusy(btn,busy,label){
+      if(!btn)return;if(busy){btn.dataset.old=btn.textContent;btn.disabled=true;btn.textContent=label||"处理中..."}
+      else{btn.disabled=false;btn.textContent=btn.dataset.old||btn.textContent}
+    }
+    function proxyPort(v){var n=Number(v);return /^\d+$/.test(v)&&n>0&&n<=65535?v:""}
+    function proxyHostScore(v){v=String(v||"").replace(/^\[|\]$/g,"");if(!v)return 0;return (v.toLowerCase()==="localhost"?3:0)+(/[.:]/.test(v)?2:0)+(/^[\w-]+$/.test(v)?1:0)}
+    function splitProxyHostPort(v){var p=String(v||"").lastIndexOf(":"),h=p>0?v.slice(0,p).trim():"",port=p>0?proxyPort(v.slice(p+1).trim()):"";return h&&port?{host:h,port:port}:null}
+    function normalizeProxyValue(raw){
+      var v=String(raw||"").trim();if(!v||v.indexOf("://")!==-1)return v;
+      if((v.match(/@/g)||[]).length===1){var a=v.split("@"),left=splitProxyHostPort(a[0]),right=splitProxyHostPort(a[1]);if(left&&a[1].indexOf(":")>0&&(!right||proxyHostScore(left.host)>=proxyHostScore(right.host))){var x=a[1].indexOf(":"),u=a[1].slice(0,x),pw=a[1].slice(x+1);if(u&&pw)return "http://"+u+":"+pw+"@"+left.host+":"+left.port}return "http://"+v}
+      var p=v.split(":"),first=p.length>=4?proxyPort(p[1]):"",last=p.length>=4?proxyPort(p[p.length-1]):"",hostFirst=!!(p[0]&&first&&p[2]&&p.slice(3).join(":")),authFirst=!!(p[0]&&p.slice(1,-2).join(":")&&p[p.length-2]&&last);
+      if(hostFirst&&authFirst){hostFirst=proxyHostScore(p[0])>=proxyHostScore(p[p.length-2]);authFirst=!hostFirst}
+      if(hostFirst)return "http://"+p[2]+":"+p.slice(3).join(":")+"@"+p[0]+":"+first;
+      if(authFirst)return "http://"+p[0]+":"+p.slice(1,-2).join(":")+"@"+p[p.length-2]+":"+last;
+      return "http://"+v
+    }
+    function normalizeProxyField(id,multiline){var el=document.getElementById(id);if(!el)return multiline?[]:"";if(!multiline){el.value=normalizeProxyValue(el.value);return el.value}var seen={},rows=el.value.split(/\r?\n/).map(normalizeProxyValue).filter(function(x){if(!x||seen[x])return false;seen[x]=true;return true});el.value=rows.join("\n");return rows}
+    function registerProxyLines(){var seen={};return document.getElementById("regProxy").value.split(/\r?\n/).map(normalizeProxyValue).filter(function(x){if(!x||seen[x])return false;seen[x]=true;return true})}
+    function resetProxyCheckState(){
+      var count=registerProxyLines().length;document.getElementById("proxyInputState").textContent=count?"已录入 "+count+" 条；离开输入框后自动补 http:// 并统一格式。":"每行一条；支持四种常见排列及 HTTP、HTTPS、SOCKS5，未写协议自动补 http://。"
+    }
+    function isEditing(){var el=document.activeElement;return el&&(/INPUT|TEXTAREA|SELECT/.test(el.tagName))}
+    function toggleMenu(open){document.getElementById("sidebar").classList.toggle("open",!!open);document.getElementById("drawerMask").classList.toggle("open",!!open)}
+    function switchView(name){
+      state.activeView=name;document.getElementById("pageTitle").textContent=titles[name]||"GoPay";
+      document.querySelectorAll(".view").forEach(function(v){v.classList.toggle("active",v.id==="view-"+name)});
+      document.querySelectorAll("[data-view]").forEach(function(b){b.classList.toggle("active",b.dataset.view===name)});
+      toggleMenu(false);renderActive();if(name==="register"||name==="pool")loadPool(false);window.scrollTo({top:0,behavior:"auto"})
+    }
+    document.querySelectorAll("[data-view]").forEach(function(btn){btn.addEventListener("click",function(){switchView(btn.dataset.view)})});
+    function renderStats(){
+      var waiting=state.paymentJobs.filter(function(j){return j.status==="waiting_otp"}).length+state.registerJobs.filter(function(j){return j.status==="waiting_otp"}).length;
+      var running=state.paymentJobs.filter(function(j){return j.status==="running"}).length+state.registerJobs.filter(function(j){return j.status==="running"}).length;
+      document.getElementById("statAccounts").textContent=state.accounts.length;
+      document.getElementById("statPool").textContent=state.pool.length;
+      document.getElementById("statOtp").textContent=waiting;
+      document.getElementById("statRunning").textContent=running
+    }
+    function renderOverview(){
+      var all=state.paymentJobs.map(function(j){return {kind:"支付",id:j.id,phone:j.phone,status:j.status,message:j.message,updated_at:j.updated_at}})
+        .concat(state.registerJobs.map(function(j){return {kind:"注册",id:j.id,phone:j.phone,status:j.status,message:j.message,updated_at:j.updated_at}}))
+        .sort(function(a,b){return String(b.updated_at||"").localeCompare(String(a.updated_at||""))}).slice(0,7);
+      var box=document.getElementById("overviewActivity");
+      if(!all.length){box.innerHTML='<div class="empty"><strong>暂无任务</strong>从注册与登录或支付中心创建第一条任务。</div>';return}
+      box.innerHTML='<div class="activity">'+all.map(function(j){return '<div class="activity-row"><span class="mono">'+esc(shortTime(j.updated_at))+'</span><div><strong>'+esc(j.kind+" · "+(j.phone||j.id||"-"))+'</strong><div class="muted truncate">'+esc(j.message||"")+'</div></div>'+statusBadge(j.status)+'</div>'}).join("")+'</div>'
+    }
+    function renderRegisterJobs(){
+      var body=document.getElementById("registerRows");
+      if(!state.registerJobs.length){body.innerHTML='<tr><td colspan="8"><div class="empty"><strong>暂无注册任务</strong>新建任务后会在这里显示进度。</div></td></tr>';return}
+      body.innerHTML=state.registerJobs.slice(0,80).map(function(j){
+        var otp=j.status==="waiting_otp"?'<div class="action-row"><input id="reg-otp-'+esc(j.id)+'" inputmode="numeric" maxlength="6" placeholder="4-6 位" style="width:92px;min-height:31px"><button class="btn primary sm" onclick="submitRegisterOtp(\''+esc(j.id)+'\')">提交</button></div>':"-";
+        return '<tr><td class="mono">'+esc(j.id)+'</td><td>'+esc(j.phone||"-")+'</td><td>'+esc(j.source||"-")+'</td><td>'+esc(j.login_existing?"登录":"注册")+'</td><td>'+statusBadge(j.status)+'</td><td><span class="truncate" title="'+esc(j.message||"")+'">'+esc(j.message||"-")+'</span></td><td>'+otp+'</td><td><button class="btn secondary sm" type="button" onclick="openTaskLog(\''+esc(j.id)+'\')">日志</button></td></tr>'
+      }).join("")
+    }
+    function openTaskLog(id){
+      var j=state.registerJobs.concat(state.paymentJobs).find(function(item){return String(item.id)===String(id)});if(!j){toast("任务不存在或已被清理","error");return}
+      var mode=state.paymentJobs.indexOf(j)>=0?"支付":(j.login_existing?"登录":"注册"),entries=(j.logs||[]).slice();
+      if(!entries.length&&j.message)entries=[{at:j.updated_at||j.created_at,message:j.message}];
+      var logs=entries.map(function(x,i){return '<li class="'+(i===entries.length-1?"current":"")+'"><span class="log-time">'+esc(fmt(x.at))+'</span>'+esc(x.message||"-")+'</li>'}).join("")||'<li class="current">暂无详细日志</li>';
+      document.getElementById("taskLogDialogTitle").textContent=(j.id||"-")+" · "+mode;
+      document.getElementById("taskLogBody").innerHTML='<dl class="task-log-summary"><dt>手机号</dt><dd>'+esc(j.phone||"-")+'</dd><dt>状态</dt><dd>'+statusBadge(j.status)+'</dd><dt>当前消息</dt><dd>'+esc(j.message||"-")+'</dd><dt>更新时间</dt><dd>'+esc(fmt(j.updated_at||j.created_at))+'</dd></dl><h4 style="margin:0 0 12px">完整日志</h4><ol class="logs">'+logs+'</ol>';
+      document.getElementById("taskLogDialog").showModal()
+    }
+    function closeTaskLog(){document.getElementById("taskLogDialog").close()}
+    function renderPhoneChangeTaskLog(task,phone){
+      var entries=(task.logs||[]).slice();if(!entries.length&&task.message)entries=[{at:task.updated_at||task.created_at,message:task.message}];
+      var logs=entries.map(function(x,i){return '<li class="'+(i===entries.length-1?"current":"")+'"><span class="log-time">'+esc(fmt(x.at))+'</span>'+esc(x.message||"-")+'</li>'}).join("")||'<li class="current">暂无详细日志</li>';
+      document.getElementById("taskLogDialogTitle").textContent=(task.id||"-")+" · SMSBower 全自动换绑";
+      document.getElementById("taskLogBody").innerHTML='<dl class="task-log-summary"><dt>原账号</dt><dd class="mono">'+esc(task.old_phone||phone||"-")+'</dd><dt>当前换绑号</dt><dd class="mono">'+esc(task.new_phone||"-")+'</dd><dt>换号次数</dt><dd>'+esc(task.attempt_count||1)+' / '+esc(task.max_attempts||10)+'</dd><dt>代理服务商</dt><dd>'+esc(task.proxy_provider_name||"账号代理/直连")+'</dd><dt>代理出口</dt><dd class="mono">'+esc(task.proxy_exit_ip||task.proxy_preview||"-")+'</dd><dt>状态</dt><dd>'+statusBadge(task.status)+'</dd><dt>当前消息</dt><dd>'+esc(task.message||"-")+'</dd><dt>更新时间</dt><dd>'+esc(fmt(task.updated_at||task.created_at))+'</dd></dl><h4 style="margin:0 0 12px">完整日志</h4><ol class="logs">'+logs+'</ol>';
+    }
+    async function openPhoneChangeLog(phone){
+      try{
+        var data=await api("/api/phone-change-tasks"),key=digits(phone),tasks=(data.tasks||[]).filter(function(x){return digits(x.old_phone)===key||digits(x.new_phone)===key});
+        if(!tasks.length){toast("该账号还没有换绑日志","error");return}
+        tasks.sort(function(a,b){return String(b.updated_at||b.created_at||"").localeCompare(String(a.updated_at||a.created_at||""))});
+        renderPhoneChangeTaskLog(tasks[0],phone);
+        document.getElementById("taskLogDialog").showModal()
+      }catch(e){toast("读取换绑日志失败："+e.message,"error")}
+    }
+    async function submitRegisterOtp(id){
+      var input=document.getElementById("reg-otp-"+id);var code=digits(input&&input.value);
+      if(code.length<4||code.length>6){toast("请输入 4 到 6 位数字验证码","error");return}
+      try{await api("/api/register-jobs/"+encodeURIComponent(id)+"/otp",{method:"POST",body:JSON.stringify({code:code})});toast("验证码已提交");await loadJobs(false)}
+      catch(e){toast(e.message,"error")}
+    }
+    function poolStateLabel(value){return {unregistered:"未注册",login_required:"待登录",registered:"已入账号库"}[value]||"未分类"}
+    function poolStateBadge(row){var s=row.account_state||"unregistered",k=s==="registered"?"registered":s==="login_required"?"waiting_otp":"available";return '<span class="status '+k+'">'+esc(poolStateLabel(s))+'</span>'}
+    function poolPhoneKey(phone){return digits(phone)}
+    function poolLocalPhone(phone){var value=digits(phone);return value.indexOf("62")===0?value.slice(2):value}
+    async function copyPoolButton(button){var kind=button.dataset.copyKind||"",raw=button.dataset.copyValue||"",value=kind==="phone"?poolLocalPhone(raw):raw;try{await navigator.clipboard.writeText(value);toast(kind==="phone"?"已复制本地手机号："+value:"已复制短信接口")}catch(_error){var box=document.createElement("textarea");box.value=value;box.style.position="fixed";box.style.opacity="0";document.body.appendChild(box);box.select();var ok=document.execCommand("copy");box.remove();toast(ok?(kind==="phone"?"已复制本地手机号："+value:"已复制短信接口"):"复制失败",ok?undefined:"error")}}
+    function poolPhoneSelected(phone){return !!state.selectedPoolPhones[poolPhoneKey(phone)]}
+    function setPoolPhoneSelected(phone,checked){var key=poolPhoneKey(phone);if(!key)return;if(checked)state.selectedPoolPhones[key]=phone;else delete state.selectedPoolPhones[key]}
+    function eligiblePoolRows(){var login=document.getElementById("regMode").value==="login";return state.pool.filter(function(x){var s=x.account_state||"unregistered";return x.status!=="used"&&(login?(s==="login_required"||s==="registered"):s==="unregistered")})}
+    function selectedEligiblePoolPhones(){var eligible={};eligiblePoolRows().forEach(function(x){eligible[poolPhoneKey(x.phone)]=x.phone});return Object.keys(state.selectedPoolPhones).filter(function(k){return eligible[k]}).map(function(k){return eligible[k]})}
+    function renderRegisterPhonePicker(){
+      var source=document.getElementById("regSource").value,field=document.getElementById("regPhonePickerField"),count=document.getElementById("regCount"),box=document.getElementById("regPhonePicker"),hint=document.getElementById("regPhonePickerHint");field.hidden=source!=="pool";count.disabled=source==="pool";if(source!=="pool"){return}
+      var rows=eligiblePoolRows(),selected=selectedEligiblePoolPhones();count.value=selected.length;
+      box.innerHTML=rows.map(function(x){var checked=poolPhoneSelected(x.phone);return '<label class="phone-choice '+(checked?'is-selected':'')+'"><input type="checkbox" '+(checked?'checked':'')+' onchange="togglePoolPhoneSelection(\''+esc(x.phone)+'\',this.checked)"><span class="mono">'+esc(x.phone)+'</span>'+poolStateBadge(x)+'</label>'}).join("")||'<div class="empty" style="padding:20px"><strong>当前分类没有可选号码</strong><br>请到号码池导入或调整分类。</div>';
+      hint.textContent="可选 "+rows.length+" 个，已选 "+selected.length+" 个；"+(document.getElementById("regMode").value==="login"?'登录模式显示待登录和已入账号库号码。':'注册模式只显示未注册号码。')
+    }
+    function togglePoolPhoneSelection(phone,checked){setPoolPhoneSelected(phone,checked);renderRegisterPhonePicker();renderPool()}
+    function selectAllEligiblePoolPhones(){eligiblePoolRows().forEach(function(x){setPoolPhoneSelected(x.phone,true)});renderRegisterPhonePicker();renderPool()}
+    function clearPoolPhoneSelection(){state.selectedPoolPhones={};renderRegisterPhonePicker();renderPool()}
+    function visiblePoolRows(){var q=digits(document.getElementById("poolSearch").value),filter=document.getElementById("poolStateFilter").value;return state.pool.filter(function(x){return (!q||digits(x.phone).includes(q))&&(filter==="all"||x.account_state===filter)})}
+    function toggleVisiblePoolPhones(checked){visiblePoolRows().forEach(function(x){setPoolPhoneSelected(x.phone,checked)});renderRegisterPhonePicker();renderPool()}
+    function renderPool(){
+      var rows=visiblePoolRows(),counts={unregistered:0,login_required:0,registered:0};state.pool.forEach(function(x){counts[x.account_state||"unregistered"]=(counts[x.account_state||"unregistered"]||0)+1});
+      document.getElementById("poolCountLabel").textContent="共 "+state.pool.length+" 个 · 未注册 "+counts.unregistered+" · 待登录 "+counts.login_required+" · 已入库 "+counts.registered;
+      var body=document.getElementById("poolRows");document.getElementById("poolSelectVisible").checked=!!rows.length&&rows.every(function(x){return poolPhoneSelected(x.phone)});
+      if(!rows.length){body.innerHTML='<tr><td colspan="6"><div class="empty"><strong>当前分类没有号码</strong>可调整筛选或导入号码。</div></td></tr>';return}
+      body.innerHTML=rows.map(function(x){var stateButton=x.account_state==="registered"?'':x.account_state==="login_required"?'<button class="btn secondary sm" onclick="setOnePoolState(\''+esc(x.phone)+'\',\'unregistered\')">设为未注册</button>':'<button class="btn secondary sm" onclick="setOnePoolState(\''+esc(x.phone)+'\',\'login_required\')">设为待登录</button>';return '<tr class="'+(poolPhoneSelected(x.phone)?'selected':'')+'"><td><input class="pool-check" type="checkbox" '+(poolPhoneSelected(x.phone)?'checked':'')+' onchange="togglePoolPhoneSelection(\''+esc(x.phone)+'\',this.checked)"></td><td><div class="copy-cell"><span class="mono">'+esc(x.phone)+'</span><button class="copy-icon" type="button" data-copy-kind="phone" data-copy-value="'+esc(x.phone)+'" onclick="copyPoolButton(this)" title="复制不含 +62 的号码" aria-label="复制本地手机号">'+icon("i-copy")+'</button></div></td><td><div class="copy-cell"><span class="truncate" title="'+esc(x.sms_url||"")+'">'+esc(x.sms_url||"-")+'</span><button class="copy-icon" type="button" data-copy-kind="url" data-copy-value="'+esc(x.sms_url||"")+'" onclick="copyPoolButton(this)" title="复制完整短信接口" aria-label="复制短信接口">'+icon("i-copy")+'</button></div></td><td>'+poolStateBadge(x)+'</td><td>'+statusBadge(x.status||"available")+'</td><td><div class="action-row">'+stateButton+'<button class="btn danger sm" onclick="deletePhone(\''+esc(x.phone)+'\')">删除</button></div></td></tr>'}).join("")
+    }
+    function accountUsable(x){return x.use_status==="available"&&x.pin_setup_status==="configured"&&x.pin_saved}
+    function payCardUsable(x){return accountUsable(x)&&Number(x.balance||0)>0}
+    function fmtCountdown(sec){sec=Math.max(0,Math.floor(Number(sec)||0));if(sec<=0)return "-";var m=Math.floor(sec/60),s=sec%60;return (m<10?"0":"")+m+":"+(s<10?"0":"")+s}
+    function paymentSmsState(x){if(x.sms_auto_source==="phone_pool")return '<b>号码池自动</b>';if(x.sms_auto_source==="smsbower")return '<b class="countdown" data-sec="'+esc(x.sms_remaining_sec==null?-1:x.sms_remaining_sec)+'">'+(x.sms_remaining_sec>=0?fmtCountdown(x.sms_remaining_sec):"SMSBower 自动")+'</b>';return '<b>手动</b>'}
+    function payStateLabel(x){switch(x.use_status){case "available":return "待支付";case "used_failed":return "支付失败";case "used_success":return "已支付";case "reserved":return "绑定中";case "no_balance":return "余额不足";default:return x.use_label||"未知"}}
+    function payStateClass(x){if(x.use_status==="available")return "available";if(x.use_status==="used_failed")return "failed";if(x.use_status==="used_success")return "done";if(x.use_status==="reserved")return "running";return "unknown"}
+    function cardPayProxyList(){return normalizeProxyField("cardPayProxy",true)}
+    function nextCardPayProxy(){var list=cardPayProxyList();if(!list.length)return "";if(typeof state.cardPayProxyIndex!=="number"||state.cardPayProxyIndex>=list.length||state.cardPayProxyIndex<0)state.cardPayProxyIndex=0;var p=list[state.cardPayProxyIndex];state.cardPayProxyIndex=(state.cardPayProxyIndex+1)%list.length;return p}
+
+    function renderAccountPayCards(){
+      var grid=document.getElementById("accountPayGrid");if(!grid)return;
+      var savedLinks={};
+      var existing=grid.querySelectorAll(".acc-card");
+      for(var i=0;i<existing.length;i++){var card=existing[i];var phoneEl=card.querySelector(".acc-phone");var linkEl=card.querySelector(".acc-link");if(phoneEl&&linkEl&&linkEl.value)savedLinks[phoneEl.textContent.trim()]=linkEl.value}
+      var order={available:0,reserved:1};
+      var pool=state.accounts.filter(function(x){return x.use_status==="available"||x.use_status==="reserved"}).slice().sort(function(a,b){var oa=order[a.use_status];var ob=order[b.use_status];return ((oa===undefined?9:oa)-(ob===undefined?9:ob))});
+      if(!pool.length){grid.innerHTML='<div class="empty" style="grid-column:1/-1"><strong>暂无可用账号</strong>请先在「注册与登录」页登录账号并处理 PIN 后再来支付。</div>';return}
+      grid.innerHTML=pool.map(function(x){
+        var pin=x.pin_saved?'已保存 PIN':'本机未保存';
+        var err=x.use_message?esc(x.use_message):"";
+        var cls=payStateClass(x);
+        var busy=x.use_status!=="available";
+        var kick=x.use_status!=="no_balance"?'<button class="btn danger sm" title="释放该账号的绑定并释放占用" onclick="releaseBinding(\''+esc(x.phone)+'\',this)">踢出</button>':'';
+        var payBtn=busy?'<button class="btn primary sm" disabled title="账号正在绑定中，完成或释放后才会恢复可支付">绑定中</button>':'<button class="btn primary sm" onclick="payWithAccount(\''+esc(x.phone)+'\',this)">支付</button>';
+        return '<div class="acc-card status-'+cls+'">'
+          +'<div class="acc-head"><div><div class="acc-phone">'+esc(x.phone)+'</div><div class="acc-pin">'+pin+'</div></div><span class="status '+cls+'">'+payStateLabel(x)+'</span></div>'
+          +'<div class="acc-meta"><span>余额 <b>'+esc(Number(x.balance||0).toLocaleString("zh-CN"))+' IDR</b></span><span>接码 '+paymentSmsState(x)+'</span></div>'
+          +(err?'<div class="acc-err">'+esc(err)+'</div>':'')
+          +'<div class="acc-pay"><input class="acc-link" value="'+esc(savedLinks[x.phone]||"")+'" placeholder="粘贴 Midtrans 支付链接" spellcheck="false" autocomplete="off">'+payBtn+'</div>'
+          +'<div class="acc-foot">'+kick+'<button class="btn secondary sm" onclick="checkBalance(\''+esc(x.phone)+'\',this)">查余额</button><button class="btn secondary sm" onclick="openPinDialog(\''+esc(x.phone)+'\')">改PIN</button><button class="btn ghost sm" onclick="deleteAccount(\''+esc(x.phone)+'\')">删除</button></div>'
+          +'</div>'
+      }).join("")
+    }
+    async function payWithAccount(phone,btn){
+      var card=btn.closest(".acc-card");if(!card)return;
+      var link=(card.querySelector(".acc-link").value||"").trim();
+      if(!link){toast("先粘贴 Midtrans 支付链接","error");return}
+      if(link.indexOf("midtrans.com")<0){toast("链接看起来不是 Midtrans 链接","error");return}
+      setBusy(btn,true,"创建中...");
+      try{var data=await api("/api/payment",{method:"POST",body:JSON.stringify({phone:phone,pin:"",proxy:nextCardPayProxy(),midtrans_url:link})});state.selectedPaymentId=data.id;toast("支付任务已创建："+data.id);await loadJobs(false);await loadAccounts(false)}
+      catch(e){toast(e.message,"error")}finally{setBusy(btn,false)}
+    }
+    setInterval(function(){var els=document.querySelectorAll(".acc-card .countdown");for(var i=0;i<els.length;i++){var el=els[i];var s=parseInt(el.getAttribute("data-sec")||"-1",10);if(s>0){el.setAttribute("data-sec",String(s-1));el.textContent=fmtCountdown(s-1)}}},1000);
+    setInterval(refreshCooldownLabels,60000);
+    function toggleAccountFilter(){var box=document.getElementById("accountFilterUsable");if(box){try{localStorage.setItem("gopay_account_filter_usable",box.checked?"1":"0")}catch(e){}}renderAccounts()}
+function setPhoneTypeFilter(kind){state.phoneTypeFilter=kind;["all","long_term","short_term"].forEach(function(x){var b=document.getElementById("phoneType"+(x==="all"?"All":x==="long_term"?"Long":"Short"));if(!b)return;b.className="btn "+(x===kind?"secondary":"ghost")+" sm"});renderAccounts()}
+function phoneTypeBadge(x){return x.phone_type==="short_term"?'<span class="badge warn">短效</span>':'<span class="badge success">长效</span>'}
+function renderAccounts(){
+      var usableOnly=state.activeView==="payment";var filterBox=document.getElementById("accountFilterUsable");if(!usableOnly&&filterBox){try{usableOnly=filterBox.checked||localStorage.getItem("gopay_account_filter_usable")==="1"}catch(e){usableOnly=filterBox.checked}filterBox.checked=usableOnly}
+var pool=usableOnly?state.accounts.filter(accountUsable):state.accounts;pool=state.phoneTypeFilter==="all"?pool:pool.filter(function(x){return x.phone_type===state.phoneTypeFilter});
+      var q=(document.getElementById("accountSearch").value||"").toLowerCase();var rows=pool.filter(function(x){return !q||String(x.phone||"").toLowerCase().includes(q)||String(x.customer_id||"").toLowerCase().includes(q)});
+      var select=document.getElementById("payPhone");var current=select.value;
+      select.innerHTML='<option value="">请选择账号</option>'+pool.map(function(x){return '<option value="'+esc(x.phone)+'">'+esc(x.phone)+' · '+esc(Number(x.balance||0).toLocaleString("zh-CN"))+' Rp</option>'}).join("");
+      if(pool.some(function(x){return x.phone===current}))select.value=current;
+      var body=document.getElementById("accountRows");
+if(!rows.length){body.innerHTML='<tr><td colspan="9"><div class="empty"><strong>'+((state.activeView==="payment")?"没有可用账号":"暂无 GoPay 账号")+'</strong>'+((state.activeView==="payment")?"仅显示本地已保存 PIN 且未绑定的账号。请先在登录/注册页自动登录账号并处理 PIN。":"完成注册或登录后，账号会显示在这里。")+'</div></td></tr>';return}
+      body.innerHTML=rows.map(function(x){
+        var canRelease=(x.sms_activation_status==="active"||x.sms_activation_status==="unknown")&&/^\d+$/.test(String(x.activation_id||""));
+        var release=canRelease?'<button class="btn secondary sm" onclick="releaseSms(\''+esc(x.phone)+'\',this)">释放号码</button>':'';
+        var setupPin=x.pin_setup_status==="missing"?'<button class="btn secondary sm" onclick="startPinSetup(\''+esc(x.phone)+'\')">设置 PIN</button>':'';
+        var boundUse=x.use_status==="used_success"||x.use_status==="used_failed"||x.use_status==="reserved";
+        var releaseBinding=boundUse?'<button class="btn secondary sm" onclick="releaseBinding(\''+esc(x.phone)+'\',this)">释放绑定</button>':'';
+        var shortTest=x.phone_type==="short_term"?'<button class="btn ghost sm" onclick="testShortPhoneChange(\''+esc(x.phone)+'\')">短效换绑测试</button>':'';var smsKind=x.phone_type==="long_term"?"long_term":"short_term";var smsChange='<button class="btn primary sm" onclick="smsBowerPhoneChange(\''+esc(x.phone)+'\',this,\''+smsKind+'\')">'+(smsKind==="long_term"?"SMSBower长效全自动换绑":"SMSBower短效全自动换绑")+'</button>';return '<tr><td class="mono">'+esc(x.phone)+'</td><td>'+phoneTypeBadge(x)+'</td><td>'+esc(x.local||"-")+'</td><td><strong>'+esc(Number(x.balance||0).toLocaleString("zh-CN"))+' Rp</strong></td><td>'+accountStatusCell(x)+'</td><td>'+pinBadge(x)+'</td><td>'+smsBadge(x)+'</td><td class="mono">'+esc(x.customer_id||"-")+'</td><td><div class="action-row"><button class="btn secondary sm" onclick="checkBalance(\''+esc(x.phone)+'\',this)">查余额</button><button class="btn secondary sm" onclick="checkPinStatus(\''+esc(x.phone)+'\',this)">检测 PIN</button>'+setupPin+'<button class="btn secondary sm" onclick="openPinDialog(\''+esc(x.phone)+'\')">修改 PIN</button><button class="btn secondary sm" onclick="relogin(\''+esc(x.phone)+'\',this)">重新登录</button><button class="btn ghost sm" onclick="setAccountPhoneType(\''+esc(x.phone)+'\')">号码类型</button><button class="btn secondary sm" onclick="syncPhoneChange(\''+esc(x.phone)+'\')">换绑同步</button>'+smsChange+'<button class="btn secondary sm" onclick="openPhoneChangeLog(\''+esc(x.phone)+'\')">换绑日志</button>'+shortTest+releaseBinding+release+'<button class="btn danger sm" onclick="deleteAccount(\''+esc(x.phone)+'\')">删除</button></div></td></tr>'
+      }).join("");
+      updatePayPinHint()
+    }
+    function authFlowLabel(flow){return {register:"注册",login:"登录",login_confirm:"二次登录",verification:"验证"}[flow]||flow||"认证"}
+    function authFlowBadge(flow){var key=flow||"auth";return '<span class="auth-flow '+esc(key)+'">'+esc(authFlowLabel(key))+'</span>'}
+    function renderAuthEnvironments(){
+      var body=document.getElementById("authEnvironmentRows"),route=document.getElementById("authEnvironmentRoute"),meta=document.getElementById("authEnvironmentMeta");if(!body||!route||!meta)return;
+      var flow=(document.getElementById("authEnvironmentFlow")||{}).value||"all";
+      var q=((document.getElementById("authEnvironmentSearch")||{}).value||"").trim().toLowerCase();
+      var rows=state.authEnvironments.filter(function(x){var n=x.network||{},d=x.device||{};var hay=[x.phone,n.egress_ip,n.proxy,d.model,d.manufacturer,d.os,d.app_version,d.unique_id,d.session_id].join(" ").toLowerCase();return (flow==="all"||x.flow===flow)&&(!q||hay.indexOf(q)>=0)});
+      var total=Number(state.authEnvironmentMeta.total||state.authEnvironments.length||0);meta.textContent="共 "+total+" 条 · 当前显示 "+rows.length+" 条 · 最近记录优先";
+      var latest=rows[0]||state.authEnvironments[0];
+      if(latest){var ln=latest.network||{},ld=latest.device||{};route.innerHTML='<div class="auth-route-node"><span>模拟设备</span><strong title="'+esc((ld.manufacturer||"")+" "+(ld.model||""))+'">'+esc(ld.model||"未知设备")+' · '+esc(ld.os||"-")+'</strong></div><i class="auth-route-arrow" aria-hidden="true"></i><div class="auth-route-node"><span>'+(ln.mode==="proxy"?"代理出口":"直连出口")+'</span><strong class="auth-ip">'+esc(ln.egress_ip||"未探测到")+'</strong></div><i class="auth-route-arrow" aria-hidden="true"></i><div class="auth-route-node"><span>最近认证</span><strong>'+esc(authFlowLabel(latest.flow))+' · '+esc(latest.phone||"-")+'</strong></div>'}
+      else{route.innerHTML='<div class="auth-route-node"><span>模拟设备</span><strong>等待认证记录</strong></div><i class="auth-route-arrow" aria-hidden="true"></i><div class="auth-route-node"><span>出口网络</span><strong>等待 IP 探测</strong></div><i class="auth-route-arrow" aria-hidden="true"></i><div class="auth-route-node"><span>认证流程</span><strong>下一次注册 / 登录后显示</strong></div>'}
+      if(!rows.length){body.innerHTML='<tr><td colspan="8"><div class="empty"><strong>暂无认证环境记录</strong>下一次注册或登录开始时，会自动记录模拟设备、脱敏代理和实际出口 IP。</div></td></tr>';return}
+      body.innerHTML=rows.map(function(x){var n=x.network||{},d=x.device||{};var network=n.mode==="proxy"?(n.proxy||"proxy"):"direct";var probe=n.probe_ok?'<span class="status success">已确认</span>':'<span class="status unknown">未确认</span>';return '<tr><td class="mono">'+fmt(x.recorded_at)+'</td><td>'+authFlowBadge(x.flow)+'</td><td class="mono">'+esc(x.phone||"-")+'</td><td><span class="auth-ip">'+esc(n.egress_ip||"-")+'</span><br>'+probe+'</td><td><span class="truncate mono" style="max-width:230px" title="'+esc(network)+'">'+esc(network)+'</span></td><td><div class="auth-device"><strong>'+esc(d.model||"-")+'</strong><span>'+esc(d.manufacturer||d.platform||"Android")+'</span></div></td><td><div class="auth-device"><strong>'+esc(d.os||"-")+'</strong><span>App '+esc(d.app_version||"-")+'</span></div></td><td><button class="btn secondary sm" onclick="openAuthEnvironment(\''+esc(x.event_id)+'\')">查看详情</button></td></tr>'}).join("")
+    }
+    function openAuthEnvironment(eventId){
+      var x=state.authEnvironments.find(function(row){return row.event_id===eventId});if(!x){toast("认证环境记录已刷新，请重新打开","error");return}
+      var n=x.network||{},d=x.device||{};document.getElementById("authEnvironmentDialogTitle").textContent=authFlowLabel(x.flow)+" · "+(x.phone||"-")+" · "+fmt(x.recorded_at);
+      var pairs=[["事件 ID",x.event_id],["流程",authFlowLabel(x.flow)],["手机号",x.phone],["国家代码",x.country_code],["网络模式",n.mode],["脱敏代理",n.proxy],["出口 IP",n.egress_ip],["IP 探测",n.probe_ok?"成功 · HTTP "+n.probe_status:"未确认 · "+(n.probe_error||"无结果")],["模拟设备",[d.manufacturer,d.model].filter(Boolean).join(" / ")],["系统",d.os],["App",[d.app_id,d.app_version].filter(Boolean).join(" / ")],["Unique ID",d.unique_id],["Session ID",d.session_id],["User-Agent",d.user_agent],["TLS profile",d.tls_profile],["XM1 SHA-256",d.xm1_sha256]];
+      document.getElementById("authEnvironmentDetail").innerHTML='<dl class="auth-detail-grid">'+pairs.map(function(pair){return '<dt>'+esc(pair[0])+'</dt><dd class="mono">'+esc(pair[1]||"-")+'</dd>'}).join("")+'</dl><pre class="auth-xm1">'+esc(d.xm1||"无 XM1 记录")+'</pre>';
+      document.getElementById("authEnvironmentDialog").showModal()
+    }
+    function closeAuthEnvironment(){document.getElementById("authEnvironmentDialog").close()}
+    function jobText(j){return (j.logs||[]).map(function(x){return x.message||""}).join(" ")+" "+(j.message||"")}
+    function needsCaptcha(j){return /x-captcha-token|captcha|人机验证/i.test(jobText(j))}
+    function needsManualCaptcha(j){if(!j||!j.midtrans_url)return false;if(j.result&&j.result.captcha_required)return true;return j.status==="failed"&&needsCaptcha(j)}
+    function paymentStage(j){
+      if(!j)return 0;var t=jobText(j).toLowerCase();
+      if(j.status==="success"||j.status==="failed"||/step 13|payment process|扣款|settlement|fraud/.test(t))return 4;
+      if(/step 12|pin verify|验证 pin|payment confirm/.test(t))return 3;
+      if(j.status==="waiting_otp"||/waiting for otp|otp 已发送|等待.*otp|validate-otp/.test(t))return 2;
+      if(/linking|绑定 midtrans|validate-pin|gopay linked/.test(t))return 1;return 0
+    }
+    function stageName(stage){return ["检查账号","绑定 Midtrans","等待 OTP","验证 PIN","扣款结果"][stage]||"检查账号"}
+    function selectedPayment(){return state.paymentJobs.find(function(j){return j.id===state.selectedPaymentId})||null}
+    function selectPayment(id){state.selectedPaymentId=id;renderPaymentJobs();renderPaymentDetail();renderRail()}
+    function renderPayBatches(){
+      var box=document.getElementById("batchPayStatus");if(!box)return;
+      var batches=(state.paymentBatches||[]).slice().sort(function(a,b){return String(b.created_at||"").localeCompare(String(a.created_at||""))});
+      if(!batches.length){box.innerHTML='<span class="muted">还没有批量任务。创建任务后，这里会显示进度。</span>';return}
+      box.innerHTML=batches.map(function(b){
+        var total=Math.max(1,b.count||0);var pct=Math.round(((b.finished||0)/total)*100);
+        var label=b.status==="done"?"完成":b.status==="failed"?"失败":"运行中";
+        var cls=b.status==="done"?"success":b.status==="failed"?"failed":"running";
+        return '<div style="padding:12px 0;border-bottom:1px solid var(--border)">'+
+          '<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap">'+
+          '<span class="mono">'+esc(b.id)+'</span><div><span class="status '+cls+'">'+label+'</span>'+(b.status==="running"?' <button class="btn danger sm" onclick="cancelPaymentBatch(\''+esc(b.id)+'\')">取消</button>':'')+'</div></div>'+
+          '<div style="display:flex;justify-content:space-between;gap:10px;margin-top:6px;flex-wrap:wrap">'+
+          '<span>'+esc(b.message||"")+'</span><span class="muted">'+pct+'%</span></div>'+
+          ((b.last_log||(b.logs&&b.logs.length?b.logs[b.logs.length-1].text:''))?'<div style="margin-top:6px;font-size:12px;color:var(--blue)">▶ 当前：'+esc(b.last_log||(b.logs&&b.logs.length?b.logs[b.logs.length-1].text:''))+'</div>':'')+
+          '<div class="hint" style="margin-top:6px">链接 '+b.count+' 条 · 线程 '+b.workers+' · 成功 '+b.succeeded+' · 失败 '+b.failed+' · 已释放账号 '+(b.released||0)+'</div>'+
+          ((b.failures&&Object.keys(b.failures).length?('<div class="hint" style="margin-top:4px">失败原因：'+Object.keys(b.failures).map(function(k){return esc(k)+' x'+b.failures[k]}).join('，')+'</div>'):'')+(b.logs&&b.logs.length?('<details style="margin-top:8px"><summary style="cursor:pointer;font-size:12px;color:var(--blue);user-select:none">查看完整日志（'+b.logs.length+' 条）</summary><div style="margin-top:6px;max-height:340px;overflow:auto;border:1px solid var(--border);border-radius:6px;padding:8px;background:rgba(0,0,0,.18)"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px"><span class="hint">全部日志（与单个任务一致，最新在底部）</span><button class="btn ghost sm" onclick="copyBatchLog(\''+esc(b.id)+'\')">复制全部</button></div><ol class="logs">'+b.logs.map(function(l,i,a){return '<li class="'+(i===a.length-1?"current":"")+'"><span class="log-time">'+esc(fmt(l.at))+'</span>'+esc(l.text||l.message||"")+'</li>'}).join('')+'</ol></div></details>'):'')+b.last_error?'<div class="hint" style="margin-top:4px;color:var(--danger)">最近错误：'+esc(b.last_error)+'</div>':'')+
+          '</div>';
+      }).join("")
+    }
+    async function cancelPaymentBatch(id){if(!confirm("确定取消该批量任务？正在处理中的链接会停止重试。"))return;try{var d=await api("/api/payment-batches/cancel",{method:"POST",body:JSON.stringify({bid:id})});toast(d.ok?"已发送取消指令":"取消失败");await loadJobs(false)}catch(e){toast(e.message,"error")}}
+    function copyBatchLog(id){var b=(state.paymentBatches||[]).find(function(x){return x.id===id});if(!b||!b.logs||!b.logs.length){toast("没有可复制的日志","error");return}var text=b.logs.map(function(l){return "["+(l.at||"")+"] "+(l.text||"")}).join("\n");navigator.clipboard.writeText(text).then(function(){toast("已复制 "+b.logs.length+" 条日志")},function(){toast("复制失败","error")})}
+    function renderPaymentJobs(){
+      var filter=document.getElementById("paymentFilter").value;var rows=state.paymentJobs.filter(function(j){return !filter||j.status===filter});var body=document.getElementById("paymentRows");
+      if(!rows.length){body.innerHTML=filter?'<tr><td colspan="6"><div class="empty"><strong>当前筛选下暂无任务</strong>可切换状态筛选查看其他支付任务。</div></td></tr>':'<tr><td colspan="6"><div class="empty"><strong>暂无支付任务</strong>发起支付后，任务会显示在这里。</div></td></tr>';return}
+      body.innerHTML=rows.map(function(j){var sel=j.id===state.selectedPaymentId?" selected":"";return '<tr class="'+sel+'" onclick="selectPayment(\''+esc(j.id)+'\')"><td class="mono">'+esc(j.id)+'</td><td>'+esc(j.phone||"-")+'</td><td>'+esc(stageName(paymentStage(j)))+'</td><td>'+statusBadge(j.status)+'</td><td class="mono">'+esc(fmt(j.updated_at))+'</td><td><div class="action-row"><button class="btn ghost sm" onclick="event.stopPropagation();selectPayment(\''+esc(j.id)+'\')">查看</button><button class="btn secondary sm" onclick="event.stopPropagation();openTaskLog(\''+esc(j.id)+'\')">日志</button>'+(needsManualCaptcha(j)?'<a class="btn primary sm" href="'+esc(j.midtrans_url)+'" target="_blank" rel="noopener noreferrer" onclick="event.stopPropagation()">打开官方验证页</a>':'')+(j.midtrans_url&&(j.status==="failed"||j.status==="waiting_otp")?'<button class="btn danger sm" onclick="event.stopPropagation();resetPaymentLink(\''+esc(j.id)+'\')">解除占用</button>':'')+'</div></td></tr>'}).join("")
+    }
+    function renderRail(){
+      var j=selectedPayment(),stage=paymentStage(j);var steps=document.querySelectorAll(".rail-step");
+      steps.forEach(function(el,i){el.classList.toggle("complete",!!j&&i<stage);el.classList.toggle("active",!!j&&i===stage)});
+      document.getElementById("railFill").style.width=j?(stage*20)+"%":"0";
+      var status=document.getElementById("flowStatus"),copy=document.getElementById("railCopy");
+      if(!j){status.textContent="尚未选择任务";copy.innerHTML='<strong>准备开始</strong><span class="muted">创建或选择任务后，这里会显示当前支付阶段。</span>';return}
+      status.innerHTML=statusBadge(j.status);copy.innerHTML='<strong>'+esc(stageName(stage))+'</strong><span class="muted">'+esc(j.message||"任务处理中")+'</span>'
+    }
+    function renderPaymentDetail(){
+      var j=selectedPayment(),box=document.getElementById("paymentDetail");
+      if(!j){box.innerHTML='<div class="empty"><strong>选择支付任务</strong>任务详情、日志和 OTP 输入会显示在这里。</div>';return}
+      var logs=(j.logs||[]).map(function(x,i,a){return '<li class="'+(i===a.length-1?"current":"")+'"><span class="log-time">'+esc(fmt(x.at))+'</span>'+esc(x.message||"")+'</li>'}).join("")||'<li class="current">等待任务日志</li>';
+      var otp=j.status==="waiting_otp"?'<div class="otp-box"><h4>输入支付 OTP</h4><p class="hint">短信验证码会发送到 '+esc(j.phone||"该账号")+'；号码池或 SMSBower 会自动取码，也可以在这里手动提交。</p><input id="paymentOtp" class="otp-input" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="••••••"><button class="btn primary" style="width:100%;margin-top:10px" onclick="submitPaymentOtp(\''+esc(j.id)+'\')">提交 OTP</button></div>':'';
+      var captcha=needsManualCaptcha(j)?'<div class="otp-box"><h4>自动解验证码失败，可手动兜底</h4><p class="hint">纯协议支付默认由 Solverify 自动解 Alibaba 人机验证；本次自动解证未能通过（通常是被代理/出证时效问题卡住）。如仍要继续，可打开原 Midtrans 链接，在官方页面手动完成人机验证并继续支付。</p><a class="btn primary" style="display:block;text-align:center;margin-top:10px" href="'+esc(j.midtrans_url)+'" target="_blank" rel="noopener noreferrer">打开官方验证页</a></div>':'';
+      var meta=j.midtrans_meta||{};
+      box.innerHTML='<div class="panel-head"><h3>任务详情</h3>'+statusBadge(j.status)+'</div><div class="panel-body"><dl class="detail-grid"><dt>任务 ID</dt><dd class="mono">'+esc(j.id)+'</dd><dt>手机号</dt><dd>'+esc(j.phone||"-")+'</dd><dt>订单</dt><dd>'+esc(meta.order_id||"-")+'</dd><dt>金额</dt><dd>'+esc(meta.gross_amount||"-")+' '+esc(meta.currency||"")+'</dd><dt>创建时间</dt><dd>'+esc(fmt(j.created_at))+'</dd><dt>更新时间</dt><dd>'+esc(fmt(j.updated_at))+'</dd></dl><h4 style="margin:18px 0 12px">流程日志</h4><ol class="logs">'+logs+'</ol></div>'+captcha+otp
+    }
+    async function submitPaymentOtp(id){
+      var input=document.getElementById("paymentOtp");var code=digits(input&&input.value);
+      if(code.length<4||code.length>6){toast("请输入 4 到 6 位数字 OTP","error");return}
+      try{await api("/api/payment-jobs/"+encodeURIComponent(id)+"/otp",{method:"POST",body:JSON.stringify({code:code})});toast("支付 OTP 已提交");await loadJobs(false)}
+      catch(e){toast(e.message,"error")}
+    }
+    function renderSettings(){
+      document.getElementById("smsBase").value=state.sms.api_base_url||"https://smsbower.page";
+      document.getElementById("smsService").value=state.sms.service||"ni";
+      document.getElementById("smsCountry").value=state.sms.country||"6";
+      document.getElementById("smsMinPrice").value=state.sms.min_price||"";
+      document.getElementById("smsMaxPrice").value=state.sms.max_price||"";
+      var badge=document.getElementById("smsConfigState"),ok=!!state.sms.api_key_configured;
+      badge.className="status "+(ok?"success":"failed");badge.textContent=ok?"已配置":"未配置";
+      var cap=state.captcha||{};
+      document.getElementById("captchaSolverifyBase").value=cap.solverify_api_base_url||"https://solver.solverify.net";
+      document.getElementById("captchaScene").value=cap.scene_id||"1mbz0gpl6";
+      document.getElementById("captchaPrefix").value=cap.prefix||"y1rdnbp";
+      document.getElementById("captchaRegion").value=cap.region||"sgp";
+      var capBadge=document.getElementById("captchaConfigState"),capOk=!!cap.api_key_configured;
+      capBadge.className="status "+(capOk?"success":"failed");capBadge.textContent=capOk?(cap.solverify_api_key_configured?"已配置 Solverify":"已配置 2Captcha"):"未配置"
+
+      var px=state.proxyConfig||{};
+      document.getElementById("proxyClashAddress").value=px.clash_address||"http://127.0.0.1:7897";
+      document.getElementById("proxyDefault").value=px.default_proxy||"";
+      var pxBadge=document.getElementById("proxyConfigState"),pxOk=!!px.default_proxy;
+      pxBadge.className="status "+(pxOk?"success":"failed");pxBadge.textContent=pxOk?"默认代理已启用":"未启用";
+      renderProxyProviders()
+    }
+    function proxyProviderKindLabel(kind){return {custom:"自定义",iproyal:"IPRoyal",cliproxy:"Cliproxy","711proxy":"711proxy",cakeip:"CakeIP"}[kind]||kind||"自定义"}
+    function bindingSelectId(purpose){return {registration:"proxyBindRegistrationProvider",phone_change:"proxyBindPhoneChangeProvider",payment:"proxyBindPaymentProvider"}[purpose]}
+    function bindingEnabledId(purpose){return {registration:"proxyBindRegistrationEnabled",phone_change:"proxyBindPhoneChangeEnabled",payment:"proxyBindPaymentEnabled"}[purpose]}
+    function bindingCountryId(purpose){return {registration:"proxyBindRegistrationCountry",phone_change:"proxyBindPhoneChangeCountry",payment:"proxyBindPaymentCountry"}[purpose]}
+    function renderProxyProviders(){
+      var providers=state.proxyProviders||[],enabled=providers.filter(function(x){return x.enabled}),options='<option value="">请选择服务商</option>'+enabled.map(function(x){return '<option value="'+esc(x.id)+'">'+esc(x.name)+'</option>'}).join("");
+      ["registration","phone_change","payment"].forEach(function(purpose){var binding=(state.proxyBindings||{})[purpose]||{},select=document.getElementById(bindingSelectId(purpose));if(!select)return;select.innerHTML=options;if(binding.provider_id&&!enabled.some(function(x){return Number(x.id)===Number(binding.provider_id)}))select.insertAdjacentHTML("beforeend",'<option value="'+esc(binding.provider_id)+'" disabled>已停用或不存在</option>');select.value=binding.provider_id?String(binding.provider_id):"";document.getElementById(bindingEnabledId(purpose)).checked=!!binding.enabled;document.getElementById(bindingCountryId(purpose)).value=binding.country||"ID"});
+      var body=document.getElementById("proxyProviderRows");if(!body)return;if(!providers.length){body.innerHTML='<tr><td colspan="6"><div class="empty"><strong>暂无代理服务商</strong>点击“新增服务商”创建。</div></td></tr>';return}
+      body.innerHTML=providers.map(function(x){var node=x.preview||([x.host,x.port].filter(Boolean).join(":"))||"-",stateBadge=x.enabled?'<span class="status success">已启用</span>':'<span class="status unknown">已停用</span>';return '<tr><td><strong>'+esc(x.name)+'</strong></td><td>'+esc(proxyProviderKindLabel(x.kind))+'</td><td><div class="provider-node"><strong>'+esc(node)+'</strong><span>'+esc(x.scheme||"http")+'</span></div></td><td>'+esc(x.ttl_minutes||30)+' 分钟</td><td><div class="provider-state">'+stateBadge+(x.password_configured?'<span class="badge success">密码已保存</span>':'')+'</div></td><td><div class="action-row"><button class="btn secondary sm" type="button" onclick="testProxyProvider('+Number(x.id)+',this)">测试</button><button class="btn secondary sm" type="button" onclick="openProxyProviderDialog('+Number(x.id)+')">编辑</button><button class="btn danger sm" type="button" onclick="deleteProxyProvider('+Number(x.id)+')">删除</button></div></td></tr>'}).join("")
+    }
+    function syncProxyProviderKind(){var kind=document.getElementById("proxyProviderKind").value,host=document.getElementById("proxyProviderHost"),port=document.getElementById("proxyProviderPort"),ttl=document.getElementById("proxyProviderTTL"),userTpl=document.getElementById("proxyProviderUsernameTemplate"),isNew=!document.getElementById("proxyProviderId").value;if(kind==="iproyal"){if(!host.value)host.value="proxy.iproyal.net";if(!port.value)port.value="9000";if(isNew&&(!ttl.value||ttl.value==="30"))ttl.value="2";if(!userTpl.value)userTpl.value="{username}_area-{country}_session-{session}_life-120"}}
+    function openProxyProviderDialog(id){var provider=(state.proxyProviders||[]).find(function(x){return Number(x.id)===Number(id)})||{};document.getElementById("proxyProviderForm").reset();document.getElementById("proxyProviderId").value=provider.id||"";document.getElementById("proxyProviderDialogTitle").textContent=provider.id?"编辑代理服务商":"新增代理服务商";document.getElementById("proxyProviderName").value=provider.name||"";document.getElementById("proxyProviderKind").value=provider.kind||"custom";document.getElementById("proxyProviderEnabled").checked=provider.id?!!provider.enabled:true;document.getElementById("proxyProviderScheme").value=provider.scheme||"http";document.getElementById("proxyProviderHost").value=provider.host||"";document.getElementById("proxyProviderPort").value=provider.port||"";document.getElementById("proxyProviderTTL").value=provider.ttl_minutes||30;document.getElementById("proxyProviderUsername").value=provider.username||"";document.getElementById("proxyProviderUsernameTemplate").value=provider.username_template||"";document.getElementById("proxyProviderPassword").value="";document.getElementById("proxyProviderPassword").placeholder=provider.password_configured?"留空保留现有密码":"请输入密码";document.getElementById("proxyProviderPasswordTemplate").value=provider.password_template||"";document.getElementById("proxyProviderURLTemplates").value=provider.url_templates||"";document.getElementById("proxyProviderClearPassword").checked=false;syncProxyProviderKind();document.getElementById("proxyProviderDialog").showModal();document.getElementById("proxyProviderName").focus()}
+    function closeProxyProviderDialog(){document.getElementById("proxyProviderDialog").close()}
+    async function deleteProxyProvider(id){var provider=(state.proxyProviders||[]).find(function(x){return Number(x.id)===Number(id)});if(!confirm("确定删除代理服务商“"+(provider?provider.name:id)+"”吗？"))return;try{await api("/api/proxy/providers/"+id+"/delete",{method:"POST",body:"{}"});toast("代理服务商已删除");await loadProxyProviders()}catch(e){toast(e.message,"error")}}
+    async function testProxyProvider(id,button){setBusy(button,true,"测试中...");var result=document.getElementById("proxyProviderTestResult");try{var d=await api("/api/proxy/providers/"+id+"/test",{method:"POST",body:JSON.stringify({country:"ID"})});result.textContent=d.ok?(d.provider+" 可用 · 出口 "+d.ip+" · "+d.ms+" ms"):("测试失败："+(d.error||"代理不可用"));result.style.color=d.ok?"var(--green)":"var(--red)"}catch(e){result.textContent="测试失败："+e.message;result.style.color="var(--red)"}finally{setBusy(button,false)}}
+    async function saveProxyProviderBindings(button){var rows=["registration","phone_change","payment"].map(function(purpose){return {purpose:purpose,enabled:document.getElementById(bindingEnabledId(purpose)).checked,provider_id:Number(document.getElementById(bindingSelectId(purpose)).value||0),country:(document.getElementById(bindingCountryId(purpose)).value||"ID").trim().toUpperCase()}});if(rows.some(function(x){return x.enabled&&(!x.provider_id||!/^[A-Z]{2}$/.test(x.country))})){toast("启用的业务必须选择服务商并填写两位国家代码","error");return}setBusy(button,true,"保存中...");try{var d=await api("/api/proxy/bindings",{method:"POST",body:JSON.stringify({bindings:rows})});state.proxyBindings=d.bindings||{};renderProxyProviders();toast("代理业务绑定已保存")}catch(e){toast(e.message,"error")}finally{setBusy(button,false)}}
+    function updateRegisterPinMode(){
+      var login=document.getElementById("regMode").value==="login",toggle=document.getElementById("regChangePin"),row=document.getElementById("regChangePinRow"),newField=document.getElementById("regNewPinField"),newInput=document.getElementById("regNewPin"),confirmField=document.getElementById("regNewPinConfirmField"),confirmInput=document.getElementById("regNewPinConfirm");
+      row.hidden=!login;toggle.disabled=!login;if(!login)toggle.checked=false;
+      var changing=login&&toggle.checked;newField.hidden=!changing;newInput.disabled=!changing;confirmField.hidden=!changing;confirmInput.disabled=!changing;
+      document.getElementById("regPinLabel").textContent=login?(changing?"原 PIN（已有 PIN 的账号）":"PIN（短信验证码登录时可留空）"):"设置新 PIN";
+      document.getElementById("regPinHint").textContent=login?(changing?"修改 PIN 时原 PIN 必须正确；修改后会再登录确认。":"只要 GoPay 提供 otp_sms 就优先短信验证码登录；没有短信登录方式时才需要原 PIN。账号确认无 PIN 时，可填写 6 位数字用于登录后设置。"):"注册成功后，此 PIN 将真正设置到 GoPay 账号。";
+      document.getElementById("regBatchHint").textContent=changing?"号码池自动接码；批量账号必须使用相同原 PIN，如果原 PIN 不同请分批运行。":"号码池每 1 秒读取导入的短信链接并自动提交 OTP，仍可手动输入；SMSBower 需要先保存 API Key。登录成功后自动确认 PIN：本地已保存直接使用，缺失才自动设置（默认 147258，可用环境变量 OPAI_GOPAY_PIN 修改）。";
+      renderRegisterPhonePicker()
+    }
+    function updatePayPinHint(){
+      var phone=document.getElementById("payPhone").value;var account=state.accounts.find(function(x){return x.phone===phone});var hint=document.getElementById("payPinHint");
+      if(!account){hint.textContent="选择账号后会显示本地 PIN 保存状态。";return}
+      if(account.pin_setup_status==="missing"){hint.textContent="GoPay 检测为未设置 PIN，请先重新登录并设置。";return}
+      if(account.pin_change_status==="unverified"){hint.textContent="账号已有 PIN，但 OTP 登录未验证原 PIN；本机没有可自动使用的 PIN。";return}
+      if(account.pin_setup_status==="unknown"||account.pin_change_status==="unknown"||account.pin_change_status==="setup_unknown"){hint.textContent="当前 PIN 状态未确认，请先在 GoPay 官方 App 或账号页确认；不会自动使用不确定的 PIN。";return}
+      hint.textContent=account.pin_saved?"留空将使用该账号在本机保存的 PIN。":"本机没有保存 PIN，付款时必须手动填写 6 位 PIN。"
+    }
+    function openPinDialog(phone){
+      document.getElementById("pinPhone").value=phone;document.getElementById("pinDialogPhone").textContent=phone;
+      document.getElementById("pinForm").reset();document.getElementById("pinPhone").value=phone;document.getElementById("pinDialog").showModal();document.getElementById("oldPin").focus()
+    }
+    function closePinDialog(){document.getElementById("pinDialog").close()}
+    function renderActive(){
+      renderStats();
+      if(state.activeView==="overview")renderOverview();
+      if(state.activeView==="register")renderRegisterJobs();
+      if(state.activeView==="pool")renderPool();
+      if(state.activeView==="accounts"){renderAccounts();renderAuthEnvironments()}
+      if(state.activeView==="payment"){renderAccounts();renderAccountPayCards();renderPaymentJobs();renderPaymentDetail();renderRail()}
+      if(state.activeView==="settings")renderSettings()
+    }
+    async function loadAccounts(showToast){
+      try{state.accounts=(await api("/api/accounts")).accounts||[];renderStats();if(state.activeView==="accounts"||state.activeView==="payment"){renderAccounts();renderAccountPayCards()}if(showToast)toast("账号数据已刷新")}
+      catch(e){toast(e.message,"error")}
+    }
+    async function loadAuthEnvironments(showToast){
+      try{var data=await api("/api/auth-environments?limit=500");state.authEnvironments=data.records||[];state.authEnvironmentMeta=data;if(state.activeView==="accounts")renderAuthEnvironments();if(showToast)toast("认证环境已刷新")}
+      catch(e){toast(e.message,"error")}
+    }
+    async function loadPool(showToast){
+      try{state.pool=(await api("/api/phone-pool")).phones||[];var present={};state.pool.forEach(function(x){present[poolPhoneKey(x.phone)]=1});Object.keys(state.selectedPoolPhones).forEach(function(k){if(!present[k])delete state.selectedPoolPhones[k]});renderStats();renderRegisterPhonePicker();if(state.activeView==="pool")renderPool();if(showToast)toast("号码池已刷新")}
+      catch(e){toast(e.message,"error")}
+    }
+    async function loadJobs(showToast){
+      try{var results=await Promise.all([api("/api/register-jobs"),api("/api/payment-jobs")]);state.registerJobs=results[0].jobs||[];state.paymentJobs=results[1].jobs||[];state.paymentBatches=results[1].batches||[];
+        if(!state.selectedPaymentId&&state.paymentJobs.length)state.selectedPaymentId=state.paymentJobs[0].id;
+        renderStats();if(!isEditing()){if(state.activeView==="overview")renderOverview();if(state.activeView==="register")renderRegisterJobs();if(state.activeView==="payment"){renderPayBatches();renderPaymentJobs();renderPaymentDetail();renderRail()}}
+        if(showToast)toast("任务状态已刷新")
+      }catch(e){toast(e.message,"error")}
+    }
+    async function clearFinishedTasks(scope,button){
+      var target=scope==="register"?"注册与登录":scope==="payment"?"支付":"全部";
+      if(!confirm("确定清理"+target+"的已结束任务吗？只会删除成功、失败、已完成或已取消的记录；进行中和等待 OTP 的任务会保留。"))return;
+      setBusy(button,true,"正在清理...");
+      try{
+        var data=await api("/api/tasks/clear-finished",{method:"POST",body:JSON.stringify({scope:scope||"all"})});
+        await loadJobs(false);
+        if(state.selectedPaymentId&&!state.paymentJobs.some(function(job){return job.id===state.selectedPaymentId})){
+          var filter=document.getElementById("paymentFilter").value;var visible=state.paymentJobs.filter(function(job){return !filter||job.status===filter});state.selectedPaymentId=visible.length?visible[0].id:"";
+        }
+        renderActive();
+        toast(data.total?"已清理 "+data.total+" 条已结束任务":"没有可清理的已结束任务")
+      }catch(e){toast(e.message,"error")}finally{setBusy(button,false)}
+    }
+    async function loadSms(){
+      try{state.sms=await api("/api/sms-status");if(state.activeView==="settings")renderSettings()}catch(e){toast(e.message,"error")}
+    }
+    async function loadCaptcha(){
+      try{state.captcha=await api("/api/captcha-status");if(state.activeView==="settings")renderSettings()}catch(e){toast(e.message,"error")}
+    }
+    async function loadProxyConfig(){
+      try{state.proxyConfig=await api("/api/proxy-config");if(state.activeView==="settings")renderSettings()}catch(e){toast(e.message,"error")}
+    }
+    async function loadProxyProviders(){
+      try{var data=await api("/api/proxy/providers");state.proxyProviders=data.providers||[];state.proxyBindings=data.bindings||{};if(state.activeView==="settings")renderSettings()}catch(e){toast(e.message,"error")}
+    }
+    async function refreshAll(showToast){await Promise.all([loadAccounts(false),loadAuthEnvironments(false),loadPool(false),loadJobs(false),loadSms(),loadCaptcha(),loadProxyConfig(),loadProxyProviders()]);renderActive();if(showToast)toast("全部数据已刷新")}
+    document.getElementById("regMode").addEventListener("change",function(){clearPoolPhoneSelection();updateRegisterPinMode()});
+    document.getElementById("regSource").addEventListener("change",renderRegisterPhonePicker);
+    document.getElementById("regChangePin").addEventListener("change",updateRegisterPinMode);
+    document.getElementById("regProxy").addEventListener("input",resetProxyCheckState);
+    ["regProxy","cardPayProxy","batchPayProxy"].forEach(function(id){document.getElementById(id).addEventListener("blur",function(){normalizeProxyField(id,true);if(id==="regProxy")resetProxyCheckState()})});
+    ["payProxy","proxyDefault"].forEach(function(id){document.getElementById(id).addEventListener("blur",function(){normalizeProxyField(id,false)})});
+    document.getElementById("payPhone").addEventListener("change",updatePayPinHint);
+    document.getElementById("registerForm").addEventListener("submit",async function(e){
+      e.preventDefault();var source=document.getElementById("regSource").value,pin=document.getElementById("regPin").value.trim(),loginExisting=document.getElementById("regMode").value==="login",changePin=loginExisting&&document.getElementById("regChangePin").checked;if((!loginExisting||changePin||pin)&&!/^\d{6}$/.test(pin)){toast((loginExisting?"原 PIN":"PIN")+"必须是 6 位数字","error");return}var newPin=changePin?document.getElementById("regNewPin").value.trim():"",newPinConfirm=changePin?document.getElementById("regNewPinConfirm").value.trim():"";if(changePin&&!/^\d{6}$/.test(newPin)){toast("新 PIN 必须是 6 位数字","error");return}if(changePin&&newPin===pin){toast("新 PIN 不能和原 PIN 相同","error");return}if(changePin&&newPinConfirm!==newPin){toast("两次输入的新 PIN 不一致","error");return}var phones=source==="pool"?selectedEligiblePoolPhones():[];if(source==="pool"&&!phones.length){toast("请先选择至少一个号码","error");return}var count=source==="pool"?phones.length:(+document.getElementById("regCount").value||1),proxies=normalizeProxyField("regProxy",true);if(proxies.length>100){toast("代理最多填写 100 条","error");return}var btn=document.getElementById("regStartBtn");setBusy(btn,true,"正在创建...");
+      try{var data=await api("/api/batch-register",{method:"POST",body:JSON.stringify({source:source,count:count,phones:phones,workers:+document.getElementById("regWorkers").value,pin:pin,new_pin:newPin,change_pin_after_login:changePin,proxies:proxies,login_existing:loginExisting})});toast("批量任务已创建："+data.id+"；号码 "+count+" 个"+(changePin?"；将修改 PIN 并二次登录确认":"")+(proxies.length?"；后台检测 "+proxies.length+" 条代理":""));clearPoolPhoneSelection();await Promise.all([loadJobs(false),loadPool(false)])}
+      catch(err){toast(err.message,"error")}finally{setBusy(btn,false)}
+    });
+    document.getElementById("poolForm").addEventListener("submit",async function(e){
+      e.preventDefault();var text=document.getElementById("poolText").value.trim();if(!text){toast("请先输入号码和短信接口","error");return}
+      var btn=document.getElementById("poolImportBtn");setBusy(btn,true,"正在导入...");
+      try{var data=await api("/api/phone-pool/import",{method:"POST",body:JSON.stringify({text:text,account_state:document.getElementById("poolImportState").value})});document.getElementById("poolText").value="";toast("已导入 "+data.inserted+" 个、更新 "+data.updated+" 个号码");await loadPool(false)}
+      catch(err){toast(err.message,"error")}finally{setBusy(btn,false)}
+    });
+    document.getElementById("batchPayForm").addEventListener("submit",async function(e){
+      e.preventDefault();
+      var links=document.getElementById("batchPayLinks").value.trim();
+      if(!links){toast("请先粘贴至少一条 Midtrans 链接","error");return}
+      var pin=document.getElementById("batchPayPin").value.trim();
+      if(pin&&!/^\d{6}$/.test(pin)){toast("付款 PIN 必须是 6 位数字","error");return}
+      var autoPin=document.getElementById("batchPayAutoPin").checked;
+      var targetPin=document.getElementById("batchPayTargetPin").value.trim();
+      if(autoPin&&!/^\d{6}$/.test(targetPin)){toast("自动处理 PIN 时需要填写 6 位新 PIN","error");return}
+      if(autoPin&&pin){toast("自动处理 PIN 时不要同时填写付款 PIN","error");return}
+      var btn=document.getElementById("batchPayStartBtn");setBusy(btn,true,"正在创建批量任务...");
+      try{
+        var data=await api("/api/batch-payment",{method:"POST",body:JSON.stringify({midtrans_links:links,workers:(+document.getElementById("batchPayWorkers").value)||2,pin:pin,proxy:normalizeProxyField("batchPayProxy",true).join("\n"),release_after_use:document.getElementById("batchPayRelease").checked,auto_pin:autoPin,target_pin:targetPin})});
+        document.getElementById("batchPayLinks").value="";
+        toast("批量支付任务已创建："+data.id+"，链接 "+data.count+" 条");
+        await loadJobs(false);
+      }catch(err){toast(err.message,"error")}finally{setBusy(btn,false)}
+    });
+    document.getElementById("paymentForm").addEventListener("submit",async function(e){
+      e.preventDefault();if(!document.getElementById("payAcknowledge").checked){toast("请先确认真实支付提示","error");return}
+      var overridePin=document.getElementById("payPin").value.trim();if(overridePin&&!/^\d{6}$/.test(overridePin)){toast("付款 PIN 如果填写，必须是 6 位数字","error");return}
+      var btn=document.getElementById("payStartBtn");setBusy(btn,true,"正在检查并创建...");
+      try{var data=await api("/api/payment",{method:"POST",body:JSON.stringify({phone:document.getElementById("payPhone").value,pin:overridePin,proxy:normalizeProxyField("payProxy",false),midtrans_url:document.getElementById("midtransUrl").value.trim()})});state.selectedPaymentId=data.id;document.getElementById("payAcknowledge").checked=false;updatePayButton();toast("支付任务已创建："+data.id);await loadJobs(false)}
+      catch(err){toast(err.message,"error")}finally{setBusy(btn,false);updatePayButton()}
+    });
+    document.getElementById("smsForm").addEventListener("submit",async function(e){
+      e.preventDefault();var btn=document.getElementById("smsSaveBtn");setBusy(btn,true,"正在保存...");
+      try{state.sms=await api("/api/sms-config",{method:"POST",body:JSON.stringify({api_key:document.getElementById("smsKey").value.trim(),api_base_url:document.getElementById("smsBase").value.trim(),service:document.getElementById("smsService").value.trim(),country:document.getElementById("smsCountry").value.trim(),min_price:document.getElementById("smsMinPrice").value.trim(),max_price:document.getElementById("smsMaxPrice").value.trim()})});document.getElementById("smsKey").value="";renderSettings();toast("SMSBower 配置已保存")}
+      catch(err){toast(err.message,"error")}finally{setBusy(btn,false)}
+    });
+    document.getElementById("captchaForm").addEventListener("submit",async function(e){
+      e.preventDefault();var btn=document.getElementById("captchaSaveBtn");setBusy(btn,true,"正在保存...");
+      try{state.captcha=await api("/api/captcha-config",{method:"POST",body:JSON.stringify({solverify_api_key:document.getElementById("captchaSolverifyKey").value.trim(),solverify_api_base_url:document.getElementById("captchaSolverifyBase").value.trim(),scene_id:document.getElementById("captchaScene").value.trim(),prefix:document.getElementById("captchaPrefix").value.trim(),region:document.getElementById("captchaRegion").value.trim()})});document.getElementById("captchaSolverifyKey").value="";renderSettings();toast("人机验证配置已保存")}
+      catch(err){toast(err.message,"error")}finally{setBusy(btn,false)}
+    });
+    document.getElementById("proxyForm").addEventListener("submit",async function(e){
+      e.preventDefault();var btn=document.getElementById("proxySaveBtn");setBusy(btn,true,"正在保存...");
+      try{state.proxyConfig=await api("/api/proxy-config",{method:"POST",body:JSON.stringify({clash_address:document.getElementById("proxyClashAddress").value.trim()||"http://127.0.0.1:7897",default_proxy:normalizeProxyField("proxyDefault",false)})});renderSettings();toast("代理设置已保存")}
+      catch(err){toast(err.message,"error")}finally{setBusy(btn,false)}
+    });
+    document.getElementById("proxyProviderKind").addEventListener("change",syncProxyProviderKind);
+    document.getElementById("proxyProviderForm").addEventListener("submit",async function(e){
+      e.preventDefault();var id=Number(document.getElementById("proxyProviderId").value||0),button=e.submitter;setBusy(button,true,"保存中...");
+      var payload={name:document.getElementById("proxyProviderName").value.trim(),kind:document.getElementById("proxyProviderKind").value,enabled:document.getElementById("proxyProviderEnabled").checked,scheme:document.getElementById("proxyProviderScheme").value,host:document.getElementById("proxyProviderHost").value.trim(),port:Number(document.getElementById("proxyProviderPort").value||0),ttl_minutes:Number(document.getElementById("proxyProviderTTL").value||30),username:document.getElementById("proxyProviderUsername").value.trim(),username_template:document.getElementById("proxyProviderUsernameTemplate").value.trim(),password:document.getElementById("proxyProviderPassword").value,password_template:document.getElementById("proxyProviderPasswordTemplate").value.trim(),url_templates:document.getElementById("proxyProviderURLTemplates").value.trim(),clear_password:document.getElementById("proxyProviderClearPassword").checked};
+      try{await api(id?("/api/proxy/providers/"+id):"/api/proxy/providers",{method:"POST",body:JSON.stringify(payload)});closeProxyProviderDialog();toast("代理服务商已保存");await loadProxyProviders()}catch(err){toast(err.message,"error")}finally{setBusy(button,false)}
+    });
+    function clashAddress(){return (state.proxyConfig&&state.proxyConfig.clash_address)||"http://127.0.0.1:7897"}
+    function fillLocalClash(inputId){
+      var el=document.getElementById(inputId);if(!el)return;
+      var address=clashAddress();
+      if(inputId==="payProxy"){el.value=address}
+      else{
+        var seen={};var lines=el.value.split(/\r?\n/).map(function(x){return x.trim()}).filter(function(x){if(!x||x===address||seen[x])return false;seen[x]=true;return true});
+        lines.push(address);el.value=lines.join("\n");
+      }
+      toast("已填入本地 Clash 代理："+address)
+    }
+    async function enableLocalClash(){
+      var address=document.getElementById("proxyClashAddress").value.trim()||"http://127.0.0.1:7897";
+      try{state.proxyConfig=await api("/api/proxy-config",{method:"POST",body:JSON.stringify({use_clash:true,clash_address:address})});renderSettings();toast("本地 Clash 已设为默认代理："+address)}
+      catch(e){toast(e.message,"error")}
+    }
+    async function clearDefaultProxy(){
+      try{state.proxyConfig=await api("/api/proxy-config",{method:"POST",body:JSON.stringify({default_proxy:""})});renderSettings();toast("默认代理已清除")}
+      catch(e){toast(e.message,"error")}
+    }
+    async function testLocalClash(btn){
+      var address=document.getElementById("proxyClashAddress").value.trim()||"http://127.0.0.1:7897";setBusy(btn,true,"测试中...");
+      try{var d=await api("/api/proxies/check",{method:"POST",body:JSON.stringify({proxies:[address]})});var row=(d.results||[])[0];var ok=!!(row&&row.ok);
+        var risk=row&&row.verdict?(" | "+row.verdict):"";
+        var message=ok?("Clash 可用，出口 IP "+(row.ip||"-")):(row?("Clash 不可用："+(row.error||"未知错误")):"没有返回结果");
+        toast(message+risk,ok&&row&&row.risk_level!=="high"?undefined:"error")}
+      catch(e){toast(e.message,"error")}finally{setBusy(btn,false)}
+    }
+    async function runEnvCheck(btn){
+      if(btn)setBusy(btn,true,"体检中...");
+      var box=document.getElementById("envCheckResult");
+      box.innerHTML='<div class="muted">正在检查环境，约需 5-15 秒，期间不要关闭页面...</div>';
+      try{
+        var data=await api("/api/env-check");var rows=(data.items||[]);
+        box.innerHTML='<div style="margin-bottom:6px">共 '+rows.length+' 项，'+(data.ok?'全部通过':'存在失败项，见下方红色标记')+'（检查时间 '+esc(data.checked_at||"")+'）</div>'+
+          rows.map(function(r){return '<div style="padding:4px 0;display:flex;gap:8px;align-items:baseline"><span class="status '+(r.ok?"success":"failed")+'">'+(r.ok?"通过":"失败")+'</span><strong>'+esc(r.name)+'</strong><span class="muted mono" style="flex:1">'+esc(r.detail||"")+'</span></div>'}).join("");
+        var badge=document.getElementById("envCheckState");
+        badge.className="status "+(data.ok?"success":"failed");badge.textContent=data.ok?"正常":"存在问题"
+      }catch(e){
+        box.innerHTML='<span class="status failed">失败</span> '+esc(e.message)
+      }finally{if(btn)setBusy(btn,false)}
+    }
+    document.getElementById("pinForm").addEventListener("submit",async function(e){
+      e.preventDefault();var phone=document.getElementById("pinPhone").value;var oldPin=document.getElementById("oldPin").value.trim();var newPin=document.getElementById("newPin").value.trim();var confirmPin=document.getElementById("confirmPin").value.trim();
+      if(!/^\d{6}$/.test(oldPin)||!/^\d{6}$/.test(newPin)){toast("原 PIN 和新 PIN 都必须是 6 位数字","error");return}if(oldPin===newPin){toast("新 PIN 不能和原 PIN 相同","error");return}if(newPin!==confirmPin){toast("两次输入的新 PIN 不一致","error");return}
+      var btn=document.getElementById("pinSubmitBtn");setBusy(btn,true,"正在创建...");try{var job=await api("/api/pin-tasks",{method:"POST",body:JSON.stringify({phone:phone,old_pin:oldPin,new_pin:newPin,mode:"known"})});closePinDialog();toast("PIN 修改任务已创建："+job.id);renderPinTaskLog(job);document.getElementById("taskLogDialog").showModal();watchPinTask(job.id)}catch(err){toast(err.message,"error")}finally{setBusy(btn,false)}
+    });
+    function updatePayButton(){var checked=document.getElementById("payAcknowledge").checked;document.getElementById("payStartBtn").disabled=!checked}
+    function togglePaymentForm(){var panel=document.getElementById("paymentCreate"),button=document.getElementById("paymentFormToggle"),collapsed=panel.classList.toggle("collapsed");button.textContent=collapsed?"展开":"收起";button.setAttribute("aria-expanded",String(!collapsed))}
+    async function checkBalance(phone,btn){setBusy(btn,true,"查询中...");try{var d=await api("/api/accounts/"+encodeURIComponent(phone)+"/balance",{method:"POST"});toast(phone+" 当前余额："+Number(d.balance||0).toLocaleString("zh-CN")+" Rp");await loadAccounts(false)}catch(e){toast(e.message,"error")}finally{setBusy(btn,false)}}
+    async function checkPinStatus(phone,btn){setBusy(btn,true,"检测中...");try{var d=await api("/api/accounts/"+encodeURIComponent(phone)+"/pin-status",{method:"POST"});toast(phone+(d.is_pin_setup?" 已设置 PIN":" 尚未设置 PIN"));await loadAccounts(false)}catch(e){toast(e.message,"error")}finally{setBusy(btn,false)}}
+    async function watchPinTask(id){for(var i=0;i<90;i++){await new Promise(function(resolve){setTimeout(resolve,1000)});try{var job=await api("/api/pin-tasks/"+encodeURIComponent(id));renderPinTaskLog(job);if(job.status==="success"){toast("PIN 修改成功，本地记录已更新");await loadAccounts(false);return}if(job.status==="failed"){toast(job.message||"PIN 修改失败","error");return}}catch(e){toast(e.message,"error");return}}toast("PIN 修改任务仍在执行，请稍后刷新","error")}
+    // ===== 忘记 PIN 重置（mode="forgot"） =====
+    var pinResetInterval = null;
+    async function startPinSetup(phone) {
+        var newPin = prompt("账号未设置 PIN，请输入新的 6 位数字 PIN（无需旧 PIN）：");
+        if (newPin === null) return;
+        if (!/^\d{6}$/.test(newPin)) { toast("PIN 必须是 6 位数字", "error"); return; }
+        try {
+            var job = await api("/api/pin-tasks", { method: "POST", body: JSON.stringify({ phone: phone, new_pin: newPin, mode: "setup" }) });
+            toast("PIN 设置任务已创建：" + job.id);
+            renderPinTaskLog(job);
+            document.getElementById("taskLogDialog").showModal();
+            if (pinResetInterval) clearInterval(pinResetInterval);
+            pinResetInterval = setInterval(function(){ pollPinResetTask(job.id); }, 2000);
+            pollPinResetTask(job.id);
+        } catch (e) { toast(e.message, "error"); }
+    }
+    async function startPinReset(phone) {
+        var newPin = prompt("请输入新的 6 位数字 PIN（无需输入旧 PIN）：");
+        if (newPin === null) return;
+        if (!/^\d{6}$/.test(newPin)) {
+            toast("新 PIN 必须是 6 位数字", "error");
+            return;
+        }
+        try {
+            var job = await api("/api/pin-tasks", {
+                method: "POST",
+                body: JSON.stringify({
+                    phone: phone,
+                    new_pin: newPin,
+                    mode: "forgot"
+                })
+            });
+            toast("PIN 重置任务已创建：" + job.id);
+            renderPinTaskLog(job);
+            document.getElementById("taskLogDialog").showModal();
+            if (pinResetInterval) clearInterval(pinResetInterval);
+            pinResetInterval = setInterval(function(){ pollPinResetTask(job.id); }, 2000);
+            pollPinResetTask(job.id);
+        } catch (e) {
+            toast(e.message, "error");
+        }
+    }
+    function renderPinTaskLog(job) {
+        var entries = (job.logs || []).slice();
+        if (!entries.length && job.message) entries = [{at: job.updated_at || job.created_at, message: job.message}];
+        var logs = entries.map(function(x,i){return '<li class="'+(i===entries.length-1?"current":"")+'"><span class="log-time">'+esc(fmt(x.at))+'</span>'+esc(x.message||"-")+'</li>'}).join("") || '<li class="current">暂无详细日志</li>';
+        document.getElementById("taskLogDialogTitle").textContent = (job.id || "-") + " · PIN 任务";
+        document.getElementById("taskLogBody").innerHTML = '<dl class="task-log-summary"><dt>手机号</dt><dd>'+esc(job.phone||"-")+'</dd><dt>状态</dt><dd>'+statusBadge(job.status)+'</dd><dt>当前消息</dt><dd>'+esc(job.message||"-")+'</dd><dt>更新时间</dt><dd>'+esc(fmt(job.updated_at||job.created_at))+'</dd></dl><h4 style="margin:0 0 12px">完整日志</h4><ol class="logs">'+logs+'</ol>';
+    }
+    async function pollPinResetTask(taskId) {
+        try {
+            var job = await api("/api/pin-tasks/" + encodeURIComponent(taskId));
+            renderPinTaskLog(job);
+            var status = job.status;
+            if (status === "waiting_otp") {
+                clearInterval(pinResetInterval);
+                pinResetInterval = null;
+                var code = prompt("请输入短信验证码（4~6 位数字，已发送到绑定的手机号）：");
+                if (code === null) {
+                    toast("已取消 OTP 提交，任务仍在后台等待", "error");
+                    return;
+                }
+                if (!/^\d{4,6}$/.test(code)) {
+                    toast("验证码必须是 4 到 6 位数字", "error");
+                    pinResetInterval = setInterval(function(){ pollPinResetTask(taskId); }, 2000);
+                    return;
+                }
+                try {
+                    await api("/api/pin-tasks/" + encodeURIComponent(taskId) + "/otp", {
+                        method: "POST",
+                        body: JSON.stringify({ code: code })
+                    });
+                    toast("OTP 已提交，等待完成");
+                    pinResetInterval = setInterval(function(){ pollPinResetTask(taskId); }, 2000);
+                } catch (e) {
+                    toast("提交 OTP 失败：" + e.message, "error");
+                }
+            } else if (status === "success") {
+                clearInterval(pinResetInterval);
+                pinResetInterval = null;
+                toast("PIN 重置成功！本地记录已更新", "");
+                await loadAccounts(false);
+            } else if (status === "failed") {
+                clearInterval(pinResetInterval);
+                pinResetInterval = null;
+                toast("PIN 重置失败：" + (job.message || "未知错误"), "error");
+            }
+        } catch (e) {
+            // 网络错误时忽略，继续轮询
+        }
+    }
+    // ===== 重登录等已有函数保持不变 =====
+    async function relogin(phone,btn){var pin=prompt("重新登录 "+phone+"。有短信验证码登录方式时 PIN 可留空；没有时请输入原 PIN：","");if(pin===null)return;pin=pin.trim();if(pin&&!/^\d{6}$/.test(pin)){toast("PIN 必须是 6 位数字或留空","error");return}setBusy(btn,true,"创建中...");try{var d=await api("/api/accounts/"+encodeURIComponent(phone)+"/relogin",{method:"POST",body:JSON.stringify({pin:pin})});toast("重新登录任务已创建："+d.id);switchView("register");await loadJobs(false)}catch(e){toast(e.message,"error")}finally{setBusy(btn,false)}}
+    function pinBatchMode(){var el=document.querySelector('input[name="pinBatchMode"]:checked');return el?el.value:"reset"}
+    function onPinBatchModeChange(){var reset=pinBatchMode()==="reset";document.getElementById("pinBatchFillBtn").textContent=reset?"填入可重置的账号":"填入未设置 PIN 的账号";document.getElementById("pinBatchSkipLabel").textContent=reset?"跳过本机未保存 PIN 的账号":"跳过已设置 PIN 的账号";document.getElementById("pinBatchSubmitBtn").textContent=reset?"开始批量重置 PIN":"开始批量设置 PIN";document.getElementById("pinBatchHint").textContent=reset?"重置直接使用本机已保存的 PIN 验证并改为新 PIN。":"有活跃 SMSBower 号码的账号会自动接验证码；没有的会等待手动输入 OTP。"}
+    function fillPinBatchAccounts(){var m=pinBatchMode();var list=(state.accounts||[]).filter(function(x){return m==="reset"?x.pin_saved&&x.pin_setup_status==="configured":x.pin_setup_status!=="configured"}).map(function(x){return x.phone}).join("\n");document.getElementById("pinBatchPhones").value=list;if(!list){toast(m==="reset"?"当前没有本机已保存 PIN 的账号":"当前没有未设置 PIN 的账号","error")}else{toast("已填入 "+list.split("\n").length+" 个账号")}}
+    async function batchPinStart(){var phones=document.getElementById("pinBatchPhones").value.split(/\r?\n/).map(function(s){return s.trim()}).filter(Boolean);if(!phones.length){toast("请先填写手机号","error");return}var newPin=document.getElementById("pinBatchNewPin").value.trim();if(!/^\d{6}$/.test(newPin)){toast("新 PIN 必须是 6 位数字","error");return}var workers=Math.min(10,Math.max(1,parseInt(document.getElementById("pinBatchWorkers").value||"2",10)||2));var skip=document.getElementById("pinBatchSkip").checked;var mode=pinBatchMode();try{var d=await api("/api/pin-tasks/batch",{method:"POST",body:JSON.stringify({phones:phones,new_pin:newPin,workers:workers,skip_configured:skip,mode:mode})});toast((mode==="reset"?"批量重置 PIN 任务已创建：":"批量设置 PIN 任务已创建：")+d.id+"，共 "+d.count+" 个账号");loadPinBatches()}catch(e){toast(e.message,"error")}}
+    async function loadPinBatches(){try{var r=await api("/api/pin-tasks");var batches=(r.batches||[]).slice().sort(function(a,b){return String(b.created_at||"").localeCompare(String(a.created_at||""))});var box=document.getElementById("pinBatchStatus");if(!box)return;if(!batches.length){box.innerHTML='<span class="muted">还没有批量 PIN 任务。</span>';return}box.innerHTML=batches.map(function(b){var label=b.status==="done"?"完成":b.status==="failed"?"失败":"运行中";var cls=b.status==="done"?"success":b.status==="failed"?"failed":"running";return '<div style="padding:10px 0;border-bottom:1px solid var(--border)">'+'<div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><span class="mono">'+esc(b.id)+'</span><span class="status '+cls+'">'+label+'</span></div>'+'<div class="hint" style="margin-top:6px">'+esc(b.message||"")+' · 并发 '+b.workers+' · 模式 '+(b.mode==="reset"?"重置":"设置")+' · 跳过 '+(b.skip_configured?(b.mode==="reset"?"本机未保存":"已设置"):"无")+'</div>'+(b.last_error?'<div class="hint" style="margin-top:4px;color:var(--danger)">最近错误：'+esc(b.last_error)+'</div>':'')+'</div>'}).join("")}catch(e){}}
+    document.getElementById("pinBatchForm").addEventListener("submit",function(e){e.preventDefault();batchPinStart()});
+    async function resetPaymentLink(id){var job=state.paymentJobs.find(function(j){return j.id===id});if(!job||!job.midtrans_url){toast("该任务没有可重置的 Midtrans 链接","error");return}if(!confirm("确定解除这条 Midtrans 链接的占用吗？解除后可重新发起支付（仅用于未支付成功、卡在等待验证码的链接）。"))return;try{var d=await api("/api/payment/links/reset",{method:"POST",body:JSON.stringify({midtrans_url:job.midtrans_url})});toast(d.ok?"已解除占用，可重新支付这条链接":"解除失败");await loadJobs(false);renderActive()}catch(e){toast(e.message,"error")}}
+    async function releaseBinding(phone,btn){if(!confirm("确定释放 "+phone+" 的 Midtrans 绑定记录吗？释放后该账号可重新用于支付。"))return;setBusy(btn,true,"释放中...");try{var d=await api("/api/accounts/"+encodeURIComponent(phone)+"/release-binding",{method:"POST"});toast(d.ok?(phone+" 已释放，可重新使用"):"释放失败");await loadAccounts(false)}catch(e){toast(e.message,"error")}finally{setBusy(btn,false)}}
+async function releaseSms(phone,btn){if(!confirm("确定释放 "+phone+" 的 SMSBower 号码吗？释放后将不能再自动接收付款 OTP。"))return;setBusy(btn,true,"释放中...");try{await api("/api/accounts/"+encodeURIComponent(phone)+"/release-sms",{method:"POST"});toast("SMSBower 号码已释放");await loadAccounts(false)}catch(e){toast(e.message,"error")}finally{setBusy(btn,false)}}
+async function setAccountPhoneType(phone){var account=state.accounts.find(function(x){return x.phone===phone});var current=account&&account.phone_type==="short_term"?"短效手机号":"长效手机号";var value=prompt("设置 "+phone+" 的号码类型。输入 long=长效，short=短效：",current.indexOf("短")>=0?"short":"long");if(value===null)return;var kind=/^short/i.test(value.trim())?"short_term":/^long/i.test(value.trim())?"long_term":"";if(!kind){toast("请输入 long 或 short","error");return}try{await api("/api/accounts/"+encodeURIComponent(phone)+"/phone-type",{method:"POST",body:JSON.stringify({phone_type:kind})});toast("号码类型已更新");await loadAccounts(false)}catch(e){toast(e.message,"error")}}
+ async function syncPhoneChange(phone){var newPhone=prompt("请先在 GoPay App 完成换绑并验证新号 OTP。然后输入已验证的新手机号：","");if(newPhone===null)return;newPhone=newPhone.trim();if(!/^\+?\d[\d\s-]{7,}$/.test(newPhone)){toast("新手机号格式不正确","error");return}var kind=confirm("新手机号是否作为长效手机号管理？\n确定=长效，取消=短效")?"long_term":"short_term";try{var d=await api("/api/accounts/"+encodeURIComponent(phone)+"/sync-phone-change",{method:"POST",body:JSON.stringify({new_phone:newPhone,phone_type:kind})});toast("本地账号已更新为 "+d.phone+"；请用新号码重新登录");await loadAccounts(false)}catch(e){toast(e.message,"error")}}
+async function cancelPhoneChangeTask(task){if(!task||!task.id)return;await api("/api/phone-change-tasks/"+encodeURIComponent(task.id)+"/cancel",{method:"POST",body:"{}"})}
+async function watchPhoneChangeTask(task,phone,btn){
+  var terminal={completed:1,failed:1,cancelled:1};
+  for(var i=0;i<900;i++){
+    var data=await api("/api/phone-change-tasks"),current=(data.tasks||[]).find(function(x){return String(x.id)===String(task.id)});
+    if(!current)throw new Error("换绑任务不存在或已被清理");task=current;setBusy(btn,true,"自动换绑 "+Number(task.attempt_count||1)+"/"+Number(task.max_attempts||10)+"...");
+    if(document.getElementById("taskLogDialog").open)renderPhoneChangeTaskLog(task,phone);
+    if(terminal[task.status]){if(task.status==="completed"){toast("全自动换绑完成："+(task.new_phone||""));await loadAccounts(false)}else{toast(task.message||"自动换绑失败","error")}return task}
+    await new Promise(function(resolve){setTimeout(resolve,2000)})
+  }
+  throw new Error("换绑任务仍在后台执行，请通过“换绑日志”继续查看")
+}
+async function smsBowerPhoneChange(phone,btn,phoneType){
+  phoneType=phoneType==="long_term"?"long_term":"short_term";var typeLabel=phoneType==="long_term"?"长效":"短效";
+  setBusy(btn,true,"正在取号...");var task=null;
+  try{
+    task=await api("/api/accounts/"+encodeURIComponent(phone)+"/smsbower-phone-change/start",{method:"POST",body:JSON.stringify({phone_type:phoneType})});
+    renderPhoneChangeTaskLog(task,phone);document.getElementById("taskLogDialog").showModal();toast("已启动 SMSBower "+typeLabel+"全自动换绑，最多尝试 10 个号码");
+    await watchPhoneChangeTask(task,phone,btn)
+  }catch(e){toast("SMSBower "+typeLabel+"换绑失败："+e.message,"error")}finally{setBusy(btn,false)}
+}
+async function testShortPhoneChange(phone){var newPhone=prompt("短效换绑测试：输入测试用新短效手机号。本操作仅更新本地测试账号索引和会话状态。","");if(newPhone===null)return;newPhone=newPhone.trim();if(!/^\+?\d[\d\s-]{7,}$/.test(newPhone)){toast("新手机号格式不正确","error");return}try{var d=await api("/api/accounts/"+encodeURIComponent(phone)+"/test-short-phone-change",{method:"POST",body:JSON.stringify({new_phone:newPhone})});toast("短效换绑测试完成："+d.phone+"；旧号码已回到未注册区");await Promise.all([loadAccounts(false),loadPool(false)])}catch(e){toast(e.message,"error")}}
+ async function deleteAccount(phone){if(!confirm("确定删除 "+phone+" 的本机账号数据吗？号码将回到待登录区。"))return;try{await api("/api/accounts/"+encodeURIComponent(phone)+"/delete",{method:"POST"});toast("账号数据已删除，号码已转为待登录");await Promise.all([loadAccounts(false),loadPool(false)])}catch(e){toast(e.message,"error")}}
+    async function deleteAllAccounts(){if(!confirm("确定删除全部 GoPay 账号数据吗？号码池中的对应号码会转为待登录。"))return;try{var d=await api("/api/accounts/delete-all",{method:"POST"});toast("已删除 "+d.removed+" 个账号");await Promise.all([loadAccounts(false),loadPool(false)])}catch(e){toast(e.message,"error")}}
+    async function setPoolStates(phones,accountState){if(!phones.length){toast("请先勾选号码","error");return}try{var d=await api("/api/phone-pool/state",{method:"POST",body:JSON.stringify({phones:phones,account_state:accountState})});toast("已更新 "+d.updated+" 个号码为“"+poolStateLabel(accountState)+"”");clearPoolPhoneSelection();await loadPool(false)}catch(e){toast(e.message,"error")}}
+    function setSelectedPoolState(accountState){setPoolStates(Object.keys(state.selectedPoolPhones).map(function(k){return state.selectedPoolPhones[k]}),accountState)}
+    function setOnePoolState(phone,accountState){setPoolStates([phone],accountState)}
+    async function deletePhone(phone){if(!confirm("确定从号码池删除 "+phone+" 吗？"))return;try{await api("/api/phone-pool/delete",{method:"POST",body:JSON.stringify({phone:phone})});setPoolPhoneSelected(phone,false);toast("号码已删除");await loadPool(false)}catch(e){toast(e.message,"error")}}
+    async function clearPool(){if(!confirm("确定清空全部号码池吗？此操作不可恢复。"))return;try{var d=await api("/api/phone-pool/clear",{method:"POST"});toast("已清空 "+d.removed+" 个号码");await loadPool(false)}catch(e){toast(e.message,"error")}}
+    var poolLogState={logs:[]};
+    async function loadPoolLog(_showToast){
+      try{var r=await api("/api/pool-log");poolLogState.logs=r.logs||[];renderPoolLog()}catch(e){}
+    }
+    function renderPoolLog(){
+      var box=document.getElementById("poolLog");if(!box)return;
+      var rows=poolLogState.logs;
+      if(!rows.length){box.innerHTML='<span class="muted">暂无筛号记录。批量任务启动后，SMSBower 预登录池的筛号进度会实时显示在这里。</span>';return}
+      box.innerHTML='<ol class="logs" style="max-height:240px;overflow:auto">'+rows.map(function(x,i,a){return '<li class="'+(i===a.length-1?"current":"")+'"><span class="log-time">'+esc(fmt(x.at))+'</span>'+esc(x.text)+'</li>'}).join("")+'</ol>'
+    }
+    updateRegisterPinMode();refreshAll(false);setInterval(function(){loadJobs(false);loadPinBatches();loadPoolLog();if(state.activeView==="accounts")loadAuthEnvironments(false);if(state.activeView==="register"||state.activeView==="pool")loadPool(false)},3000);
+  </script>
+</body>
+</html>

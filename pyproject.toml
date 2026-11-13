@@ -1,0 +1,22 @@
+[project]
+name = "gopay-zhuce"
+version = "0.1.0"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+  "tls_client>=0.13,<2",
+  "playwright>=1.40,<2",
+  "pproxy>=2.7,<3",
+]
+
+[tool.pytest.ini_options]
+pythonpath = ["app/src"]
+testpaths = ["tests"]
+
+[tool.ruff]
+target-version = "py311"
+line-length = 120
+exclude = ["work", ".venv"]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "B"]
+ignore = ["E402"]

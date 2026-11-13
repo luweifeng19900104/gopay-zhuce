@@ -1,0 +1,990 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta name="color-scheme" content="light" />
+<title>GoPay Quick CDK</title>
+<style>
+:root{
+  --bg:#f2f5f3; --card:#ffffff; --line:#e5eae6; --text:#18231d; --muted:#6d7871;
+  --brand:#0f9d58; --brand-strong:#0b7a45; --brand-soft:#e7f6ee;
+  --danger:#d93025; --danger-soft:#fdecea; --warn:#b7791f; --warn-soft:#fdf3e2;
+  --info:#2563eb; --info-soft:#e8effd; --shadow:0 1px 2px rgba(16,24,20,.05),0 8px 24px rgba(16,24,20,.06);
+  --radius:14px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{background:var(--bg);color:var(--text);font:14px/1.55 system-ui,-apple-system,"Segoe UI",Roboto,"PingFang SC","Microsoft YaHei",sans-serif;-webkit-font-smoothing:antialiased}
+.icon-sprite{display:none}
+svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.topbar{position:sticky;top:0;z-index:20;display:flex;align-items:center;justify-content:space-between;padding:12px 22px;background:rgba(255,255,255,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.brand{display:flex;align-items:center;gap:10px}
+.brand-mark{display:grid;place-items:center;width:34px;height:34px;border-radius:10px;background:linear-gradient(135deg,#12b76a,#0b7a45);color:#fff}
+.brand-mark svg{width:20px;height:20px;stroke-width:2.2}
+.brand-name{font-weight:700;font-size:17px;letter-spacing:.2px}
+.brand-meta{font-size:11px;color:var(--muted);letter-spacing:1.2px;padding:3px 8px;border:1px solid var(--line);border-radius:999px}
+.service-state{display:flex;align-items:center;gap:10px}
+.state-dot{width:8px;height:8px;border-radius:50%;background:#c9d0cb}
+.service-state[data-state="ok"] .state-dot{background:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+.service-state[data-state="err"] .state-dot{background:var(--danger);box-shadow:0 0 0 3px var(--danger-soft)}
+main{max-width:1180px;margin:22px auto 60px;padding:0 18px}
+.workspace{display:grid;grid-template-columns:380px 1fr;gap:18px;align-items:start}
+@media (max-width:960px){.workspace{grid-template-columns:1fr}}
+.create-pane,.job-pane,.history-section{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.create-pane{padding:20px}
+.section-heading{margin-bottom:16px}
+.heading-line{display:flex;align-items:center;gap:8px;margin-bottom:2px}
+.eyebrow{font-size:11px;letter-spacing:1.4px;color:var(--muted);font-weight:600}
+.protocol-badge{font-size:11px;font-weight:700;color:var(--brand-strong);background:var(--brand-soft);border:1px solid #c9ecd8;padding:2px 8px;border-radius:999px}
+h1{font-size:22px;margin:2px 0 0;letter-spacing:.2px}
+h2{font-size:16px;margin:0}
+.field-label{display:block;font-size:12.5px;font-weight:600;color:var(--muted);margin:14px 0 6px}
+.input-shell{position:relative;display:flex;align-items:center;border:1px solid var(--line);border-radius:10px;background:#fff;transition:border-color .15s, box-shadow .15s}
+.input-shell:focus-within{border-color:var(--brand);box-shadow:0 0 0 3px var(--brand-soft)}
+.input-shell input,.input-shell textarea{width:100%;border:0;outline:0;background:transparent;padding:10px 12px;font:inherit;color:var(--text);resize:vertical}
+.input-shell input{font-size:13.5px}
+.input-shell .icon-button{flex:none;margin-right:6px}
+.icon-button{display:grid;place-items:center;width:32px;height:32px;border:0;border-radius:8px;background:transparent;color:var(--muted);cursor:pointer}
+.icon-button:hover{background:#f0f3f1;color:var(--text)}
+.icon-button.standalone{border:1px solid var(--line);background:#fff}
+.verify-button{margin-right:8px;padding:6px 12px;border:0;border-radius:8px;background:var(--brand-soft);color:var(--brand-strong);font-weight:700;font-size:13px;cursor:pointer}
+.verify-button:hover{background:#d9efE4}
+.verify-button.is-verified{background:var(--brand);color:#fff}
+.field-error{min-height:16px;margin:4px 0 0;font-size:12px;color:var(--danger)}
+.quota-summary{display:flex;align-items:center;gap:8px;margin-top:8px;padding:10px 12px;border:1px dashed var(--line);border-radius:10px;color:var(--muted);font-size:13px}
+.quota-summary svg{width:16px;height:16px}
+.quota-summary strong{margin-left:auto;color:var(--text)}
+.quota-summary.is-valid{border-color:#bfe8d2;background:var(--brand-soft);color:var(--brand-strong)}
+.quota-summary.is-valid strong{color:var(--brand-strong)}
+.field-row{display:grid;grid-template-columns:90px 1fr;gap:12px}
+.primary-button{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:18px;padding:12px 16px;border:0;border-radius:11px;background:var(--brand);color:#fff;font:inherit;font-weight:700;font-size:15px;cursor:pointer;transition:background .15s, transform .05s}
+.primary-button:hover{background:var(--brand-strong)}
+.primary-button:active{transform:translateY(1px)}
+.primary-button:disabled{opacity:.55;cursor:not-allowed}
+.primary-button svg{width:17px;height:17px}
+.protocol-strip{display:flex;gap:8px;margin-top:14px}
+.protocol-strip span{font-size:11px;font-weight:700;color:var(--muted);border:1px solid var(--line);padding:4px 10px;border-radius:999px}
+.job-pane{min-height:420px;padding:20px;display:flex;flex-direction:column}
+.empty-job{flex:1;display:flex;align-items:center;justify-content:center;gap:12px;color:var(--muted);min-height:340px}
+.empty-symbol{display:grid;place-items:center;width:44px;height:44px;border-radius:14px;background:#f0f3f1;color:var(--brand)}
+.is-hidden{display:none!important}
+.batch-overview{margin-bottom:16px;padding:14px;border:1px solid var(--line);border-radius:12px;background:#fafbfa}
+.batch-overview-heading{display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--muted)}
+.batch-overview-heading strong{color:var(--text)}
+.batch-job-list{margin-top:10px;display:flex;flex-direction:column;gap:6px;max-height:170px;overflow:auto}
+.batch-job{display:flex;align-items:center;gap:8px;font-size:12.5px;padding:7px 10px;border:1px solid var(--line);border-radius:9px;background:#fff;cursor:pointer}
+.batch-job:hover{border-color:var(--brand)}
+.batch-job.is-active{border-color:var(--brand);background:var(--brand-soft)}
+.batch-job .b-id{font-family:ui-monospace,Consolas,monospace;font-size:11px;color:var(--muted)}
+.batch-job .b-phone{margin-left:auto;color:var(--muted)}
+.job-detail{flex:1;display:flex;flex-direction:column}
+.job-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.status-pill{display:inline-block;padding:3px 10px;border-radius:999px;font-size:11.5px;font-weight:700;background:#eef1ef;color:var(--muted)}
+.status-pill.running{background:var(--info-soft);color:var(--info)}
+.status-pill.waiting_for_stock{background:var(--warn-soft);color:var(--warn)}
+.status-pill.awaiting_otp{background:var(--warn-soft);color:var(--warn)}
+.status-pill.succeeded{background:var(--brand-soft);color:var(--brand-strong)}
+.status-pill.failed{background:var(--danger-soft);color:var(--danger)}
+.status-pill.cancelled{background:#eef1ef;color:var(--muted)}
+.secondary-button{padding:8px 14px;border:1px solid var(--line);border-radius:9px;background:#fff;font:inherit;font-weight:600;cursor:pointer}
+.secondary-button:hover{background:#f4f6f5}
+.danger-button{color:var(--danger);border-color:#f3c1bd}
+.danger-button:hover{background:var(--danger-soft)}
+.job-metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:14px 0}
+.job-metrics div{padding:10px 12px;border:1px solid var(--line);border-radius:10px;background:#fafbfa}
+.job-metrics dt{font-size:11px;color:var(--muted)}
+.job-metrics dd{margin:2px 0 0;font-size:13.5px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.progress-track{display:flex;list-style:none;margin:6px 0 18px;padding:0;counter-reset:none}
+.progress-track li{flex:1;display:flex;flex-direction:column;align-items:center;gap:5px;position:relative;color:var(--muted);font-size:12px}
+.progress-track li span{display:grid;place-items:center;width:28px;height:28px;border-radius:50%;background:#eef1ef;color:var(--muted);font-weight:700;font-size:12.5px;z-index:1}
+.progress-track li::before{content:"";position:absolute;top:14px;left:-50%;width:100%;height:2px;background:#e9edea}
+.progress-track li:first-child::before{display:none}
+.progress-track li.done::before{background:var(--brand)}
+.progress-track li.done span{background:var(--brand);color:#fff}
+.progress-track li.active span{background:var(--info);color:#fff;box-shadow:0 0 0 4px var(--info-soft)}
+.progress-track li.active{color:var(--info);font-weight:700}
+.result-band{display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:11px;margin-bottom:14px;background:var(--brand-soft);color:var(--brand-strong)}
+.result-band svg{width:22px;height:22px;flex:none}
+.result-band.failed{background:var(--danger-soft);color:var(--danger)}
+.result-band strong{display:block;font-size:14px}
+.result-band span{font-size:12.5px;opacity:.9}
+.log-panel{flex:1;display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;overflow:hidden;min-height:150px}
+.log-toolbar{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:#fafbfa;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+.log-output{flex:1;padding:10px 12px;font:12px/1.7 ui-monospace,Consolas,monospace;background:#0f1a14;color:#c9e8d6;overflow:auto;max-height:320px;min-height:150px}
+.log-placeholder{color:#5c7266}
+.log-line{padding:1px 0;word-break:break-all}
+.log-line .lt{color:#7f9c8b;margin-right:8px}
+.history-section{margin-top:18px;padding:20px}
+.history-heading{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px}
+.history-list{display:flex;flex-direction:column;gap:8px}
+.history-empty{color:var(--muted);text-align:center;padding:20px 0}
+.history-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-size:13px}
+.history-item .h-url{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted);font-size:12px}
+.history-item .h-phone{color:var(--muted);min-width:90px;text-align:right}
+.history-item .h-time{color:var(--muted);font-size:11.5px;min-width:130px;text-align:right}
+dialog{border:0;border-radius:16px;padding:0;box-shadow:0 24px 80px rgba(0,0,0,.25);width:min(560px,calc(100vw - 32px))}
+dialog::backdrop{background:rgba(16,24,20,.45)}
+.dialog-body{padding:22px}
+.dialog-icon{display:grid;place-items:center;width:46px;height:46px;border-radius:14px;background:var(--warn-soft);color:var(--warn);margin-bottom:12px}
+.dialog-icon svg{width:24px;height:24px}
+.dialog-body h2{margin:0 0 12px}
+.dialog-actions{display:flex;justify-content:flex-end;gap:10px;margin-top:16px}
+.primary-button.compact{width:auto;padding:9px 16px;font-size:13.5px;margin-top:0}
+.dialog-tabs{display:flex;gap:6px;margin-bottom:14px}
+.dialog-tabs button{padding:6px 12px;border:1px solid var(--line);border-radius:999px;background:#fff;font:inherit;font-size:12.5px;color:var(--muted);cursor:pointer}
+.dialog-tabs button.active{background:var(--brand-soft);color:var(--brand-strong);border-color:#bfe8d2;font-weight:700}
+.admin-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.admin-section{border:1px solid var(--line);border-radius:12px;padding:14px}
+.admin-section h3{margin:0 0 10px;font-size:13.5px}
+.admin-row{display:flex;gap:8px;margin-bottom:8px;align-items:center}
+.admin-row input{flex:1;min-width:0;padding:8px 10px;border:1px solid var(--line);border-radius:9px;font:inherit;font-size:13px}
+.admin-row input:focus{outline:0;border-color:var(--brand)}
+.admin-row .lbl{font-size:12px;color:var(--muted);width:52px}
+.admin-box{width:100%;padding:8px 10px;border:1px solid var(--line);border-radius:9px;font:12px/1.5 ui-monospace,Consolas,monospace;resize:vertical}
+.cdk-table{width:100%;border-collapse:collapse;font-size:12.5px;margin-top:10px}
+.cdk-table th,.cdk-table td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left}
+.cdk-table th{color:var(--muted);font-weight:600;font-size:11.5px}
+.cdk-table .st-used{color:var(--danger);font-weight:700}
+.cdk-table .st-unused{color:var(--brand-strong);font-weight:700}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(16px);padding:10px 18px;border-radius:11px;background:#18231d;color:#fff;font-size:13.5px;opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:99;max-width:80vw;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.spin{animation:spin 1s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+</style>
+</head>
+<body>
+<svg class="icon-sprite" aria-hidden="true">
+  <symbol id="icon-bolt" viewBox="0 0 24 24"><path d="M4 14a1 1 0 0 1-.78-1.63l9-11a.5.5 0 0 1 .87.43l-1.7 6.2H20a1 1 0 0 1 .78 1.63l-9 11a.5.5 0 0 1-.87-.43l1.7-6.2z"/></symbol>
+  <symbol id="icon-play" viewBox="0 0 24 24"><path d="m6 3 14 9-14 9z"/></symbol>
+  <symbol id="icon-clipboard" viewBox="0 0 24 24"><rect width="14" height="18" x="5" y="3" rx="2"/><path d="M9 3V1h6v2M9 8h6M9 12h6M9 16h4"/></symbol>
+  <symbol id="icon-eye" viewBox="0 0 24 24"><path d="M2.1 12a11.7 11.7 0 0 1 19.8 0 11.7 11.7 0 0 1-19.8 0"/><circle cx="12" cy="12" r="3"/></symbol>
+  <symbol id="icon-eye-off" viewBox="0 0 24 24"><path d="m3 3 18 18M10.6 10.7a2 2 0 0 0 2.7 2.7M9.9 4.2A11.8 11.8 0 0 1 21.9 12a12 12 0 0 1-2.2 3.1M6.6 6.6A12 12 0 0 0 2.1 12a11.8 11.8 0 0 0 12.1 7.8"/></symbol>
+  <symbol id="icon-x" viewBox="0 0 24 24"><path d="m18 6-12 12M6 6l12 12"/></symbol>
+  <symbol id="icon-terminal" viewBox="0 0 24 24"><rect width="20" height="16" x="2" y="4" rx="2"/><path d="m6 9 3 3-3 3M12 15h6"/></symbol>
+  <symbol id="icon-check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="m8 12 2.5 2.5L16 9"/></symbol>
+  <symbol id="icon-alert" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M12 8v4M12 16h.01"/></symbol>
+  <symbol id="icon-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="5.5"/><path d="m11.5 11.5 8-8M15 8l3 3M17 6l2 2"/></symbol>
+  <symbol id="icon-refresh" viewBox="0 0 24 24"><path d="M20 7h-5V2M4 17h5v5M20 7a8 8 0 0 0-14.7-2M4 17a8 8 0 0 0 14.7 2"/></symbol>
+  <symbol id="icon-ticket" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v3a2 2 0 0 0 0 4v3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-3a2 2 0 0 0 0-4z"/><path d="M13 5v2M13 17v2M13 11v2"/></symbol>
+  <symbol id="icon-settings" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1-1.8 1.8-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6v.1h-2.5V20a1.7 1.7 0 0 0-1-1.6 1.7 1.7 0 0 0-1.9.3l-.1.1-1.8-1.8.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H6v-2.5h.1a1.7 1.7 0 0 0 1.6-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1 1.8-1.8.1.1a1.7 1.7 0 0 0 1.9.3 1.7 1.7 0 0 0 1-1.6V5h2.5v.1a1.7 1.7 0 0 0 1 1.6 1.7 1.7 0 0 0 1.9-.3l.1-.1 1.8 1.8-.1.1a1.7 1.7 0 0 0-.3 1.9 1.7 1.7 0 0 0 1.6 1h.1v2.5h-.1a1.7 1.7 0 0 0-1.6 1Z"/></symbol>
+</svg>
+
+<header class="topbar">
+  <div class="brand">
+    <span class="brand-mark"><svg><use href="#icon-bolt"></use></svg></span>
+    <span class="brand-name">GoPay Quick CDK</span>
+    <span class="brand-meta">PAYMENT GATEWAY</span>
+  </div>
+  <div class="service-state" id="serviceState" data-state="checking">
+    <button class="icon-button standalone" id="adminButton" type="button" title="卡密管理" aria-label="卡密管理">
+      <svg><use href="#icon-settings"></use></svg>
+    </button>
+    <span class="state-dot"></span>
+    <span id="serviceStateText">正在检测服务</span>
+  </div>
+</header>
+
+<main>
+  <section class="workspace">
+    <div class="create-pane">
+      <div class="section-heading">
+        <div class="heading-line"><span class="eyebrow">NEW PAYMENT</span><span class="protocol-badge">MIDTRANS V4 / GOPAY</span></div>
+        <h1>发起支付</h1>
+      </div>
+
+      <form id="paymentForm" novalidate>
+        <label class="field-label" for="cdk">CDK 卡密</label>
+        <div class="input-shell">
+          <input id="cdk" name="cdk" autocomplete="off" spellcheck="false" placeholder="GQ-XXXX-XXXX-XXXX-XXXX" />
+          <button class="icon-button" id="toggleCdkButton" type="button" title="显示 CDK" aria-label="显示 CDK">
+            <svg><use id="toggleCdkIcon" href="#icon-eye"></use></svg>
+          </button>
+          <button class="verify-button" id="verifyCdkButton" type="button">验证</button>
+        </div>
+        <p class="field-error" id="cdkError" aria-live="polite"></p>
+        <div class="quota-summary" id="quotaSummary">
+          <svg><use href="#icon-ticket"></use></svg>
+          <span>CDK 状态</span>
+          <strong id="quotaValue">未验证</strong>
+        </div>
+
+        <label class="field-label" for="midtransUrls">Midtrans v4 链接</label>
+        <div class="input-shell input-shell-url">
+          <textarea id="midtransUrls" name="midtransUrls" autocomplete="off" spellcheck="false"
+            placeholder="https://app.midtrans.com/snap/v4/redirection/..." rows="4"></textarea>
+          <button class="icon-button" id="pasteButton" type="button" title="粘贴" aria-label="粘贴">
+            <svg><use href="#icon-clipboard"></use></svg>
+          </button>
+        </div>
+        <p class="field-error" id="urlError" aria-live="polite"></p>
+
+        <div class="field-row">
+          <div>
+            <label class="field-label" for="threadCount">并发</label>
+            <div class="input-shell"><input id="threadCount" type="number" min="1" max="4" value="1" /></div>
+          </div>
+          <div>
+            <label class="field-label" for="proxy">代理（可选）</label>
+            <div class="input-shell">
+              <input id="proxy" name="proxy" autocomplete="off" spellcheck="false" placeholder="服务器:端口:用户名:密码" />
+              <button class="icon-button" id="toggleProxyButton" type="button" title="显示代理" aria-label="显示代理">
+                <svg><use id="toggleProxyIcon" href="#icon-eye"></use></svg>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <button class="primary-button" id="submitButton" type="submit">
+          <svg><use href="#icon-play"></use></svg>
+          <span>启动支付</span>
+        </button>
+      </form>
+
+      <div class="protocol-strip">
+        <span>MIDTRANS V4</span>
+        <span>GOPAY</span>
+        <span>同一批次最多 4 并发</span>
+      </div>
+    </div>
+
+    <div class="job-pane" id="jobPane">
+      <div class="empty-job" id="emptyJob">
+        <div class="empty-symbol"><svg><use href="#icon-bolt"></use></svg></div>
+        <div><h2>暂无进行中的支付</h2></div>
+      </div>
+
+      <div class="batch-overview is-hidden" id="batchOverview">
+        <div class="batch-overview-heading">
+          <span>当前批次</span>
+          <strong id="batchSummary">0/0 完成</strong>
+        </div>
+        <div class="batch-job-list" id="batchJobList"></div>
+      </div>
+
+      <div class="job-detail is-hidden" id="jobDetail">
+        <div class="job-header">
+          <div>
+            <span class="status-pill" id="jobStatus">等待执行</span>
+            <h2 id="jobStage">准备任务</h2>
+            <p id="jobHint" style="margin:4px 0 0;color:var(--muted);font-size:12.5px">Midtrans v4</p>
+          </div>
+          <button class="secondary-button danger-button" id="cancelButton" type="button">
+            <svg style="width:14px;height:14px;vertical-align:-2px"><use href="#icon-x"></use></svg> 取消
+          </button>
+        </div>
+
+        <dl class="job-metrics">
+          <div><dt>任务</dt><dd id="jobId">-</dd></div>
+          <div><dt>手机</dt><dd id="jobPhone">等待库存</dd></div>
+          <div><dt>用时</dt><dd id="jobElapsed">0:00</dd></div>
+        </dl>
+
+        <ol class="progress-track" id="progressTrack">
+          <li data-step="link"><span>1</span><strong>链接</strong></li>
+          <li data-step="phone"><span>2</span><strong>手机</strong></li>
+          <li data-step="linking"><span>3</span><strong>绑定</strong></li>
+          <li data-step="payment"><span>4</span><strong>支付</strong></li>
+          <li data-step="done"><span>5</span><strong>完成</strong></li>
+        </ol>
+
+        <section class="result-band is-hidden" id="resultBand" aria-live="polite">
+          <svg><use id="resultIcon" href="#icon-check"></use></svg>
+          <div><strong id="resultTitle">支付成功</strong><span id="resultText"></span></div>
+        </section>
+
+        <section class="log-panel">
+          <div class="log-toolbar">
+            <span><svg style="width:14px;height:14px;vertical-align:-2px"><use href="#icon-terminal"></use></svg> 执行日志</span>
+            <span id="logCount">0 条</span>
+          </div>
+          <div class="log-output" id="logOutput" role="log" aria-live="polite">
+            <div class="log-placeholder">等待任务日志</div>
+          </div>
+        </section>
+      </div>
+    </div>
+  </section>
+
+  <section class="history-section">
+    <div class="history-heading">
+      <div><span class="eyebrow">RECENT</span><h2>最近任务</h2></div>
+      <button class="icon-button standalone" id="refreshButton" type="button" title="刷新任务" aria-label="刷新任务">
+        <svg><use href="#icon-refresh"></use></svg>
+      </button>
+    </div>
+    <div class="history-list" id="historyList">
+      <div class="history-empty">暂无任务</div>
+    </div>
+  </section>
+</main>
+
+<dialog class="otp-dialog" id="otpDialog">
+  <form method="dialog" id="otpForm">
+    <div class="dialog-body">
+      <div class="dialog-icon"><svg><use href="#icon-key"></use></svg></div>
+      <h2>输入短信验证码</h2>
+      <p style="margin:0 0 12px;color:var(--muted);font-size:13px" id="otpHint">任务等待验证码</p>
+      <label class="field-label" for="otpCode">验证码</label>
+      <input id="otpCode" inputmode="numeric" pattern="[0-9]*" maxlength="8" autocomplete="one-time-code" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font:inherit" />
+      <p class="field-error" id="otpError"></p>
+      <div class="dialog-actions">
+        <button class="secondary-button" id="otpClose" type="button">取消</button>
+        <button class="primary-button compact" type="submit">提交验证码</button>
+      </div>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="adminDialog">
+  <div class="dialog-body">
+    <div class="dialog-icon"><svg><use href="#icon-settings"></use></svg></div>
+    <h2>卡密管理</h2>
+    <div class="admin-row">
+      <span class="lbl">令牌</span>
+      <input id="adminToken" type="password" placeholder="管理员令牌（本机可自动填充）" />
+      <button class="secondary-button" id="adminTokenFetch" type="button">本机获取</button>
+    </div>
+    <div class="dialog-tabs">
+      <button type="button" data-tab="gen" class="active">生成卡密</button>
+      <button type="button" data-tab="import">导入卡密</button>
+      <button type="button" data-tab="list">卡密列表</button>
+    </div>
+
+    <div class="admin-panel" data-panel="gen">
+      <div class="admin-grid">
+        <div class="admin-section">
+          <h3>批量生成</h3>
+          <div class="admin-row"><span class="lbl">数量</span><input id="genCount" type="number" min="1" max="1000" value="10" /></div>
+          <div class="admin-row"><span class="lbl">额度</span><input id="genQuota" type="number" min="1" max="10000" value="1" title="每个卡密可用次数" /></div>
+          <div class="dialog-actions">
+            <button class="primary-button compact" id="genButton" type="button">生成</button>
+          </div>
+        </div>
+        <div class="admin-section">
+          <h3>生成结果</h3>
+          <textarea class="admin-box" id="genResult" rows="8" readonly placeholder="生成的卡密会显示在这里，可复制后发给客户"></textarea>
+          <div class="dialog-actions">
+            <button class="secondary-button" id="copyGenButton" type="button">复制全部</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-panel is-hidden" data-panel="import">
+      <div class="admin-section">
+        <h3>导入卡密（每行一个，可用 CODE----次数 指定额度）</h3>
+        <textarea class="admin-box" id="importText" rows="8" placeholder="GQ-XXXX-XXXX-XXXX-XXXX"></textarea>
+        <div class="dialog-actions">
+          <button class="primary-button compact" id="importButton" type="button">导入</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-panel is-hidden" data-panel="list">
+      <div class="admin-section">
+        <h3>卡密列表</h3>
+        <div style="max-height:300px;overflow:auto" id="cdkListWrap"></div>
+        <div class="dialog-actions">
+          <button class="secondary-button" id="resetCheckedButton" type="button">重置勾选为未用</button>
+          <button class="secondary-button" id="refreshCdkListButton" type="button">刷新</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="dialog-actions">
+      <button class="secondary-button" id="adminClose" type="button">关闭</button>
+    </div>
+  </div>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+(function () {
+  'use strict';
+  var STORAGE_KEY = 'gopay-quick-jobs-v1';
+  var CDK_STORAGE_KEY = 'gopay-quick-cdk-v1';
+  var TERMINAL = { succeeded: 1, failed: 1, cancelled: 1 };
+  var STATUS_LABELS = {
+    queued: '等待执行',
+    running: '执行中',
+    waiting_for_stock: '等待手机库存',
+    awaiting_otp: '等待验证码',
+    succeeded: '支付成功',
+    failed: '支付失败',
+    cancelled: '已取消'
+  };
+  var STEP_ORDER = ['link', 'phone', 'linking', 'payment', 'done'];
+  var STEP_LABELS = { link: '链接', phone: '手机', linking: '绑定', payment: '支付', done: '完成' };
+
+  function $(id) { return document.getElementById(id); }
+  var state = { cdkValid: false, cdkInfo: null, jobs: [], activeJobId: null, activeBatchId: null };
+  var otpPromptedFor = null;
+  var pollTimer = null;
+  var elapsedTimer = null;
+  var toastTimer = null;
+
+  function escapeHtml(text) {
+    return String(text == null ? '' : text)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+  }
+
+  async function api(path, opts) {
+    opts = opts || {};
+    var headers = { 'Content-Type': 'application/json' };
+    if (opts.headers) {
+      for (var k in opts.headers) { headers[k] = opts.headers[k]; }
+    }
+    var res;
+    try {
+      res = await fetch(path, { method: opts.method || 'GET', headers: headers, body: opts.body });
+    } catch (e) {
+      throw new Error('无法连接服务，请确认服务已启动');
+    }
+    var data = null;
+    try { data = await res.json(); } catch (e) { data = null; }
+    if (!res.ok) {
+      var msg = (data && (data.error || data.detail)) || ('请求失败 (' + res.status + ')');
+      throw new Error(msg);
+    }
+    return data;
+  }
+
+  function showToast(msg) {
+    var el = $('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    if (toastTimer) { clearTimeout(toastTimer); }
+    toastTimer = setTimeout(function () { el.classList.remove('show'); }, 3400);
+  }
+
+  function readTokens() {
+    try {
+      var v = JSON.parse(sessionStorage.getItem(STORAGE_KEY) || '[]');
+      return Array.isArray(v) ? v : [];
+    } catch (e) { return []; }
+  }
+  function writeTokens(items) { sessionStorage.setItem(STORAGE_KEY, JSON.stringify(items.slice(0, 200))); }
+  function rememberJob(id, token) {
+    var items = readTokens().filter(function (x) { return x.id !== id; });
+    items.unshift({ id: id, token: token });
+    writeTokens(items);
+  }
+  function jobToken(id) {
+    var items = readTokens();
+    for (var i = 0; i < items.length; i++) {
+      if (items[i].id === id) { return items[i].token; }
+    }
+    return '';
+  }
+
+  function setCdkError(text) { $('cdkError').textContent = text || ''; }
+
+  function renderQuota() {
+    var el = $('quotaSummary');
+    var val = $('quotaValue');
+    if (state.cdkValid && state.cdkInfo) {
+      el.classList.add('is-valid');
+      val.textContent = '已验证 · 剩余 ' + state.cdkInfo.remaining + ' 次';
+    } else {
+      el.classList.remove('is-valid');
+      val.textContent = '未验证';
+    }
+  }
+
+  async function verifyCdk(silent) {
+    var code = $('cdk').value.trim();
+    if (!code) {
+      state.cdkValid = false;
+      state.cdkInfo = null;
+      renderQuota();
+      setCdkError('请填写 CDK');
+      return null;
+    }
+    try {
+      var res = await api('/api/cdk/verify', { method: 'POST', body: JSON.stringify({ code: code }) });
+      state.cdkValid = true;
+      state.cdkInfo = res;
+      sessionStorage.setItem(CDK_STORAGE_KEY, code);
+      setCdkError('');
+      renderQuota();
+      $('verifyCdkButton').classList.add('is-verified');
+      $('verifyCdkButton').textContent = '已通过';
+      if (!silent) { showToast('CDK 验证通过，剩余 ' + res.remaining + ' 次'); }
+      return res;
+    } catch (e) {
+      state.cdkValid = false;
+      state.cdkInfo = null;
+      renderQuota();
+      setCdkError(e.message);
+      $('verifyCdkButton').classList.remove('is-verified');
+      $('verifyCdkButton').textContent = '验证';
+      if (!silent) { showToast(e.message); }
+      return null;
+    }
+  }
+
+  function parseUrls(raw) {
+    var lines = String(raw || '').split(/\r?\n/);
+    var out = [];
+    for (var i = 0; i < lines.length; i++) {
+      var t = lines[i].trim();
+      if (t && t.indexOf('midtrans.com') !== -1) { out.push(t); }
+    }
+    return out;
+  }
+
+  function proxyPort(v) { var n = Number(v); return /^\d+$/.test(v) && n > 0 && n <= 65535 ? v : ''; }
+  function proxyHostScore(v) { v = String(v || '').replace(/^\[|\]$/g, ''); return !v ? 0 : (v.toLowerCase() === 'localhost' ? 3 : 0) + (/[.:]/.test(v) ? 2 : 0) + (/^[\w-]+$/.test(v) ? 1 : 0); }
+  function splitProxyHostPort(v) { var p = String(v || '').lastIndexOf(':'), h = p > 0 ? v.slice(0, p).trim() : '', port = p > 0 ? proxyPort(v.slice(p + 1).trim()) : ''; return h && port ? { host: h, port: port } : null; }
+  function normalizeProxyValue(raw) {
+    var v = String(raw || '').trim(); if (!v || v.indexOf('://') !== -1) { return v; }
+    if ((v.match(/@/g) || []).length === 1) { var a = v.split('@'), left = splitProxyHostPort(a[0]), right = splitProxyHostPort(a[1]); if (left && a[1].indexOf(':') > 0 && (!right || proxyHostScore(left.host) >= proxyHostScore(right.host))) { var x = a[1].indexOf(':'), u = a[1].slice(0, x), pw = a[1].slice(x + 1); if (u && pw) { return 'http://' + u + ':' + pw + '@' + left.host + ':' + left.port; } } return 'http://' + v; }
+    var p = v.split(':'), first = p.length >= 4 ? proxyPort(p[1]) : '', last = p.length >= 4 ? proxyPort(p[p.length - 1]) : '', hostFirst = !!(p[0] && first && p[2] && p.slice(3).join(':')), authFirst = !!(p[0] && p.slice(1, -2).join(':') && p[p.length - 2] && last);
+    if (hostFirst && authFirst) { hostFirst = proxyHostScore(p[0]) >= proxyHostScore(p[p.length - 2]); authFirst = !hostFirst; }
+    if (hostFirst) { return 'http://' + p[2] + ':' + p.slice(3).join(':') + '@' + p[0] + ':' + first; }
+    if (authFirst) { return 'http://' + p[0] + ':' + p.slice(1, -2).join(':') + '@' + p[p.length - 2] + ':' + last; }
+    return 'http://' + v;
+  }
+
+  function setBusy(value) { $('submitButton').disabled = !!value; }
+
+  async function submitForm(ev) {
+    ev.preventDefault();
+    var urls = parseUrls($('midtransUrls').value);
+    if (!urls.length) {
+      $('urlError').textContent = '请至少填写一条 Midtrans 链接';
+      return;
+    }
+    $('urlError').textContent = '';
+    var cdk = $('cdk').value.trim();
+    if (!cdk) { setCdkError('请填写 CDK'); $('cdk').focus(); return; }
+    if (!state.cdkValid) {
+      var ok = await verifyCdk(true);
+      if (!ok) { return; }
+    }
+    var tc = parseInt($('threadCount').value || '1', 10);
+    if (isNaN(tc) || tc < 1 || tc > 4) { showToast('并发数需在 1-4 之间'); return; }
+    setBusy(true);
+    try {
+      var res = await api('/api/jobs/batch', {
+        method: 'POST',
+        body: JSON.stringify({
+          midtrans_urls: urls,
+          cdk: cdk,
+          thread_count: tc,
+          proxy: normalizeProxyValue($('proxy').value)
+        })
+      });
+      var tokens = res.raw_tokens || [];
+      for (var i = 0; i < tokens.length; i++) { rememberJob(tokens[i].id, tokens[i].token); }
+      state.cdkValid = false;
+      state.cdkInfo = null;
+      renderQuota();
+      $('verifyCdkButton').classList.remove('is-verified');
+      $('verifyCdkButton').textContent = '验证';
+      $('midtransUrls').value = '';
+      showToast('已启动 ' + (res.jobs || []).length + ' 个支付任务，每个成功任务核销 1 次 CDK');
+      await refreshJobs(true);
+    } catch (e) {
+      if (e.message.indexOf('CDK') !== -1) { setCdkError(e.message); } else { showToast(e.message); }
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  function pickActive() {
+    if (!state.jobs.length) { return null; }
+    for (var i = 0; i < state.jobs.length; i++) {
+      if (!TERMINAL[state.jobs[i].status]) { return state.jobs[i]; }
+    }
+    return state.jobs[0];
+  }
+
+  function batchJobs() {
+    var bid = state.activeBatchId;
+    if (!bid) { return state.jobs; }
+    return state.jobs.filter(function (j) { return j.batch_id === bid; });
+  }
+
+  function renderBatchOverview() {
+    var jobs = batchJobs();
+    if (!jobs.length) { $('batchOverview').classList.add('is-hidden'); return; }
+    var done = 0;
+    for (var i = 0; i < jobs.length; i++) { if (TERMINAL[jobs[i].status]) { done++; } }
+    $('batchSummary').textContent = done + '/' + jobs.length + ' 完成';
+    var html = '';
+    for (var j = 0; j < jobs.length; j++) {
+      var job = jobs[j];
+      var cls = job.id === state.activeJobId ? 'batch-job is-active' : 'batch-job';
+      var phone = job.phone ? job.phone : (job.status === 'waiting_for_stock' ? '等库存' : '待匹配');
+      html = html + '<div class="' + cls + '" data-id="' + job.id + '">'
+        + '<span class="status-pill ' + job.status + '">' + (STATUS_LABELS[job.status] || job.status) + '</span>'
+        + '<span class="b-id">' + job.id.slice(0, 8) + '</span>'
+        + '<span class="b-phone">' + escapeHtml(phone) + '</span>'
+        + '</div>';
+    }
+    $('batchJobList').innerHTML = html;
+    $('batchOverview').classList.remove('is-hidden');
+  }
+
+  function startElapsedTimer(job) {
+    if (elapsedTimer) { clearInterval(elapsedTimer); elapsedTimer = null; }
+    var start = job.started_at || job.created_at;
+    function render() {
+      var el = $('jobElapsed');
+      if (!el) { return; }
+      if (!start) { el.textContent = '0:00'; return; }
+      var t0 = new Date(start).getTime();
+      if (isNaN(t0)) { el.textContent = '0:00'; return; }
+      var diff = Math.max(0, Math.floor((Date.now() - t0) / 1000));
+      var m = Math.floor(diff / 60);
+      var s = diff % 60;
+      el.textContent = m + ':' + (s < 10 ? '0' : '') + s;
+    }
+    render();
+    elapsedTimer = setInterval(render, 1000);
+  }
+
+  function renderJob(job) {
+    $('emptyJob').classList.add('is-hidden');
+    $('jobDetail').classList.remove('is-hidden');
+    var sp = $('jobStatus');
+    sp.textContent = STATUS_LABELS[job.status] || job.status;
+    sp.className = 'status-pill ' + job.status;
+    $('jobStage').textContent = '任务 ' + job.id.slice(0, 8) + ' · ' + (STEP_LABELS[job.step] || job.step);
+    $('jobHint').textContent = job.url ? job.url.slice(0, 90) : 'Midtrans v4';
+    $('jobId').textContent = job.id.slice(0, 12);
+    $('jobPhone').textContent = job.phone || '等待库存';
+
+    var idx = STEP_ORDER.indexOf(job.step);
+    var items = $('progressTrack').querySelectorAll('li');
+    for (var i = 0; i < items.length; i++) { items[i].classList.remove('done', 'active'); }
+    if (job.status === 'succeeded') {
+      for (i = 0; i < items.length; i++) { items[i].classList.add('done'); }
+    } else if (job.status === 'failed' || job.status === 'cancelled') {
+      var failIdx = idx < 0 ? items.length - 1 : idx;
+      for (i = 0; i < failIdx; i++) { items[i].classList.add('done'); }
+      if (failIdx < items.length) { items[failIdx].classList.add('active'); }
+    } else {
+      var cur = idx < 0 ? 0 : idx;
+      for (i = 0; i < cur; i++) { items[i].classList.add('done'); }
+      if (cur < items.length) { items[cur].classList.add('active'); }
+    }
+
+    var band = $('resultBand');
+    if (job.status === 'succeeded') {
+      band.classList.remove('is-hidden', 'failed');
+      $('resultIcon').setAttribute('href', '#icon-check');
+      $('resultTitle').textContent = '支付成功';
+      $('resultText').textContent = job.error || 'CDK 已核销 1 次，任务完成';
+    } else if (job.status === 'failed' || job.status === 'cancelled') {
+      band.classList.remove('is-hidden');
+      band.classList.add('failed');
+      $('resultIcon').setAttribute('href', '#icon-alert');
+      $('resultTitle').textContent = job.status === 'cancelled' ? '已取消' : '支付失败';
+      $('resultText').textContent = job.error || '';
+    } else {
+      band.classList.add('is-hidden');
+    }
+
+    var logs = job.logs || [];
+    $('logCount').textContent = logs.length + ' 条';
+    if (!logs.length) {
+      $('logOutput').innerHTML = '<div class="log-placeholder">等待任务日志</div>';
+    } else {
+      var lh = '';
+      for (var n = 0; n < logs.length; n++) {
+        lh = lh + '<div class="log-line"><span class="lt">' + escapeHtml(logs[n].ts || '') + '</span>' + escapeHtml(logs[n].text || '') + '</div>';
+      }
+      $('logOutput').innerHTML = lh;
+      $('logOutput').scrollTop = $('logOutput').scrollHeight;
+    }
+
+    $('cancelButton').style.display = TERMINAL[job.status] ? 'none' : '';
+    startElapsedTimer(job);
+  }
+
+  function renderHistory() {
+    var el = $('historyList');
+    if (!state.jobs.length) {
+      el.innerHTML = '<div class="history-empty">暂无任务</div>';
+      return;
+    }
+    var html = '';
+    var shown = state.jobs.slice(0, 15);
+    for (var i = 0; i < shown.length; i++) {
+      var job = shown[i];
+      var url = job.url || '';
+      html = html + '<div class="history-item" data-id="' + job.id + '">'
+        + '<span class="status-pill ' + job.status + '">' + (STATUS_LABELS[job.status] || job.status) + '</span>'
+        + '<span class="h-url">' + escapeHtml(url.slice(0, 120)) + '</span>'
+        + '<span class="h-phone">' + escapeHtml(job.phone || '') + '</span>'
+        + '<span class="h-time">' + escapeHtml(job.created_at || '') + '</span>'
+        + '</div>';
+    }
+    el.innerHTML = html;
+    var nodes = el.querySelectorAll('.history-item');
+    for (var n = 0; n < nodes.length; n++) {
+      nodes[n].addEventListener('click', function () {
+        focusJob(this.getAttribute('data-id'));
+      });
+    }
+  }
+
+  function focusJob(id) {
+    var jobs = state.jobs;
+    for (var i = 0; i < jobs.length; i++) {
+      if (jobs[i].id === id) {
+        state.activeJobId = id;
+        state.activeBatchId = jobs[i].batch_id || null;
+        renderBatchOverview();
+        renderJob(jobs[i]);
+        handleOtpPrompt(jobs[i]);
+        return;
+      }
+    }
+  }
+
+  function handleOtpPrompt(active) {
+    if (!active) { return; }
+    if (active.status === 'awaiting_otp' && otpPromptedFor !== active.id) {
+      otpPromptedFor = active.id;
+      $('otpError').textContent = '';
+      $('otpCode').value = '';
+      $('otpHint').textContent = '任务 ' + active.id.slice(0, 8) + ' · 手机 ' + (active.phone || '-');
+      $('otpDialog').showModal();
+      $('otpCode').focus();
+    }
+  }
+
+  async function submitOtp(ev) {
+    ev.preventDefault();
+    var id = otpPromptedFor;
+    if (!id) { return; }
+    var code = $('otpCode').value.replace(/\D/g, '');
+    if (code.length < 4 || code.length > 8) { $('otpError').textContent = '请输入 4-8 位数字'; return; }
+    var token = jobToken(id);
+    if (!token) { $('otpError').textContent = '本地没有该任务的令牌，无法提交'; return; }
+    try {
+      await api('/api/jobs/' + encodeURIComponent(id) + '/otp', {
+        method: 'POST',
+        body: JSON.stringify({ code: code, token: token })
+      });
+      $('otpDialog').close();
+      otpPromptedFor = null;
+      await refreshJobs(true);
+    } catch (e) {
+      $('otpError').textContent = e.message;
+    }
+  }
+
+  async function cancelJob() {
+    var id = state.activeJobId;
+    if (!id) { return; }
+    var token = jobToken(id);
+    if (!token) { showToast('本地没有该任务的令牌'); return; }
+    try {
+      await api('/api/jobs/' + encodeURIComponent(id) + '/cancel', {
+        method: 'POST',
+        body: JSON.stringify({ token: token })
+      });
+      await refreshJobs(true);
+    } catch (e) { showToast(e.message); }
+  }
+
+  async function refreshJobs(force) {
+    var data;
+    try {
+      data = await api('/api/jobs');
+      state.jobs = data.jobs || [];
+    } catch (e) {
+      if (force) { showToast(e.message); }
+      return;
+    }
+    renderHistory();
+    var active = pickActive();
+    if (active) {
+      state.activeJobId = active.id;
+      state.activeBatchId = active.batch_id || null;
+      renderBatchOverview();
+      renderJob(active);
+    } else {
+      state.activeJobId = null;
+      state.activeBatchId = null;
+      $('emptyJob').classList.remove('is-hidden');
+      $('batchOverview').classList.add('is-hidden');
+      $('jobDetail').classList.add('is-hidden');
+    }
+    handleOtpPrompt(active);
+  }
+
+  function startPolling() {
+    if (pollTimer) { clearInterval(pollTimer); }
+    pollTimer = setInterval(function () { refreshJobs(false); }, 2000);
+  }
+
+  async function checkHealth() {
+    try {
+      var res = await api('/api/health');
+      var s = $('serviceState');
+      s.setAttribute('data-state', 'ok');
+      var cdk = res.cdk || {};
+      $('serviceStateText').textContent = '服务正常 · 卡密剩余 ' + (cdk.unused || 0) + ' / 共 ' + (cdk.total || 0);
+    } catch (e) {
+      $('serviceState').setAttribute('data-state', 'err');
+      $('serviceStateText').textContent = '服务连接失败';
+    }
+  }
+
+  function adminTokenValue() { return $('adminToken').value.trim(); }
+
+  async function fetchAdminToken() {
+    try {
+      var res = await api('/api/admin/token');
+      $('adminToken').value = res.token;
+      showToast('已获取管理员令牌');
+    } catch (e) { showToast(e.message); }
+  }
+
+  async function generateCdk() {
+    var token = adminTokenValue();
+    if (!token) { showToast('请先填写管理员令牌'); return; }
+    var count = parseInt($('genCount').value || '10', 10);
+    var quota = parseInt($('genQuota').value || '1', 10);
+    $('submitButton').disabled = true;
+    try {
+      var res = await api('/api/admin/cdk/generate', {
+        method: 'POST',
+        body: JSON.stringify({ token: token, count: count, quota: quota })
+      });
+      $('genResult').value = (res.codes || []).join('\n');
+      showToast('已生成 ' + (res.codes || []).length + ' 个卡密');
+    } catch (e) { showToast(e.message); }
+    finally { $('submitButton').disabled = false; }
+  }
+
+  async function importCdk() {
+    var token = adminTokenValue();
+    if (!token) { showToast('请先填写管理员令牌'); return; }
+    var text = $('importText').value;
+    if (!text.trim()) { showToast('请粘贴卡密'); return; }
+    try {
+      var res = await api('/api/admin/cdk/import', {
+        method: 'POST',
+        body: JSON.stringify({ token: token, text: text })
+      });
+      showToast('导入 ' + res.inserted + ' 个，跳过 ' + res.skipped + ' 个');
+      $('importText').value = '';
+      await refreshCdkList();
+    } catch (e) { showToast(e.message); }
+  }
+
+  async function refreshCdkList() {
+    var token = adminTokenValue();
+    if (!token) { showToast('请先填写管理员令牌'); return; }
+    try {
+      var res = await api('/api/admin/cdk/list', { headers: { 'X-Admin-Token': token } });
+      var keys = res.keys || [];
+      var html = '<table class="cdk-table"><thead><tr><th></th><th>卡密</th><th>状态</th><th>次数</th><th>创建时间</th></tr></thead><tbody>';
+      for (var i = 0; i < keys.length; i++) {
+        var k = keys[i];
+        var st = k.status === 'unused' ? 'st-unused' : 'st-used';
+        html = html + '<tr><td><input type="checkbox" class="cdk-check" value="' + escapeHtml(k.code) + '"></td>'
+          + '<td>' + escapeHtml(k.code) + '</td>'
+          + '<td class="' + st + '">' + (k.status === 'unused' ? '未用' : '已用') + '</td>'
+          + '<td>' + (k.used_count || 0) + '/' + (k.quota || 1) + '</td>'
+          + '<td>' + escapeHtml(k.created_at || '') + '</td></tr>';
+      }
+      html = html + '</tbody></table>';
+      $('cdkListWrap').innerHTML = keys.length ? html : '<div class="history-empty">暂无卡密</div>';
+    } catch (e) { showToast(e.message); }
+  }
+
+  async function resetChecked() {
+    var token = adminTokenValue();
+    if (!token) { showToast('请先填写管理员令牌'); return; }
+    var checks = document.querySelectorAll('.cdk-check:checked');
+    var codes = [];
+    for (var i = 0; i < checks.length; i++) { codes.push(checks[i].value); }
+    if (!codes.length) { showToast('请先勾选卡密'); return; }
+    try {
+      var res = await api('/api/admin/cdk/reset', {
+        method: 'POST',
+        body: JSON.stringify({ token: token, codes: codes })
+      });
+      showToast('已重置 ' + res.reset + ' 个卡密');
+      await refreshCdkList();
+    } catch (e) { showToast(e.message); }
+  }
+
+  function init() {
+    var savedCdk = sessionStorage.getItem(CDK_STORAGE_KEY);
+    if (savedCdk) { $('cdk').value = savedCdk; verifyCdk(true); }
+    checkHealth();
+    refreshJobs(false);
+    startPolling();
+
+    $('paymentForm').addEventListener('submit', submitForm);
+    $('verifyCdkButton').addEventListener('click', function () { verifyCdk(false); });
+    $('pasteButton').addEventListener('click', async function () {
+      try { $('midtransUrls').value = await navigator.clipboard.readText(); }
+      catch (e) { showToast('浏览器未允许读取剪贴板'); }
+    });
+    $('toggleCdkButton').addEventListener('click', function () {
+      var input = $('cdk');
+      var show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      $('toggleCdkIcon').setAttribute('href', show ? '#icon-eye-off' : '#icon-eye');
+    });
+    $('toggleProxyButton').addEventListener('click', function () {
+      var input = $('proxy');
+      var show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      $('toggleProxyIcon').setAttribute('href', show ? '#icon-eye-off' : '#icon-eye');
+    });
+    $('proxy').addEventListener('blur', function () { $('proxy').value = normalizeProxyValue($('proxy').value); });
+    $('cancelButton').addEventListener('click', cancelJob);
+    $('otpForm').addEventListener('submit', submitOtp);
+    $('otpClose').addEventListener('click', function () { $('otpDialog').close(); otpPromptedFor = null; });
+    $('refreshButton').addEventListener('click', function () { refreshJobs(true); });
+    $('batchJobList').addEventListener('click', function (ev) {
+      var node = ev.target.closest ? ev.target.closest('.batch-job') : null;
+      if (node) { focusJob(node.getAttribute('data-id')); }
+    });
+
+    $('adminButton').addEventListener('click', function () {
+      fetchAdminToken().then(function () { $('adminDialog').showModal(); });
+    });
+    $('adminClose').addEventListener('click', function () { $('adminDialog').close(); });
+    $('adminTokenFetch').addEventListener('click', fetchAdminToken);
+
+    var tabs = document.querySelectorAll('.dialog-tabs button');
+    for (var i = 0; i < tabs.length; i++) {
+      tabs[i].addEventListener('click', function () {
+        var tab = this.getAttribute('data-tab');
+        var allTabs = document.querySelectorAll('.dialog-tabs button');
+        for (var j = 0; j < allTabs.length; j++) { allTabs[j].classList.remove('active'); }
+        this.classList.add('active');
+        var panels = document.querySelectorAll('.admin-panel');
+        for (var n = 0; n < panels.length; n++) {
+          panels[n].classList.toggle('is-hidden', panels[n].getAttribute('data-panel') !== tab);
+        }
+      });
+    }
+    $('genButton').addEventListener('click', generateCdk);
+    $('importButton').addEventListener('click', importCdk);
+    $('copyGenButton').addEventListener('click', function () {
+      var text = $('genResult').value;
+      if (!text) { showToast('暂无可复制的卡密'); return; }
+      navigator.clipboard.writeText(text).then(function () { showToast('已复制'); }, function () { showToast('复制失败'); });
+    });
+    $('refreshCdkListButton').addEventListener('click', refreshCdkList);
+    $('resetCheckedButton').addEventListener('click', resetChecked);
+  }
+
+  init();
+})();
+</script>
+</body>
+</html>
